@@ -139,6 +139,12 @@ add_project_link_arguments(
   language: 'c'
 )
 
+# rust is optional
+rustc = find_program('rustc', required: get_option('rust'))
+if add_languages('rust', native: false, required: rustc.found())
+  add_project_arguments('-DHAVE_RUST', language: 'c')
+endif
+
 add_project_arguments('-DFWUPD_COMPILATION', language: 'c')
 
 # Needed for realpath(), syscall(), cfmakeraw(), etc.
