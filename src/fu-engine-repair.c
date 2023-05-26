@@ -38,7 +38,11 @@ grubby_set(gboolean enable, const gchar *grubby_arg,  GError **error)
 				      "",
 				      NULL};
 	g_autofree gchar *grubby = NULL;
-	grubby = fu_path_find_program("grubby", NULL);
+
+	grubby = fu_path_find_program("grubby", error);
+	if (!grubby)
+		return FALSE;
+
 	argv_grubby[0] = grubby;
 
 	if (enable)
