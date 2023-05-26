@@ -4321,12 +4321,12 @@ fu_util_repair_list(FuConsole *console)
 	g_autoptr(GString) repair_msg;
 
 	repair_msg = g_string_new(NULL);
-	title_print_padding (FWUPD_SECURITY_ATTR_ID_IOMMU, repair_msg, 40);
-	/* TRANSLATORS: This means rapair the specific system function. */
-	g_string_append_printf (repair_msg, "%s\n", _("Enable IOMMU"));
-	title_print_padding (FWUPD_SECURITY_ATTR_ID_KERNEL_LOCKDOWN, repair_msg, 40);
-	/* TRANSLATORS: This means rapair the specific system function. */
-	g_string_append_printf (repair_msg, "%s\n", _("Lockdown the Linux kernel"));
+	title_print_padding(FWUPD_SECURITY_ATTR_ID_IOMMU, repair_msg, 40);
+	/* TRANSLATORS: This means repair the specific system function. */
+	g_string_append_printf(repair_msg, "%s\n", _("Enable IOMMU"));
+	title_print_padding(FWUPD_SECURITY_ATTR_ID_KERNEL_LOCKDOWN, repair_msg, 40);
+	/* TRANSLATORS: This means repair the specific system function. */
+	g_string_append_printf(repair_msg, "%s\n", _("Lockdown the Linux kernel"));
 	fu_console_print_full(console, FU_CONSOLE_PRINT_FLAG_NONE, "%s\n", repair_msg->str);
 }
 

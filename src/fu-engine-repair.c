@@ -73,7 +73,7 @@ grubby_set_lockdown(gboolean enable, GError **error)
 }
 
 static gboolean
-grubby_set_iomme(gboolean enable, GError **error)
+grubby_set_iommu(gboolean enable, GError **error)
 {
 	if (enable)
 		return grubby_set(TRUE, "iommu=force", error);
@@ -94,9 +94,9 @@ static gboolean
 fu_engine_repair_iommu (const gchar *action, GError **error)
 {
 	if (!g_strcmp0 (action, "undo"))
-		return grubby_set_iomme (FALSE, error);
+		return grubby_set_iommu(FALSE, error);
 
-	return grubby_set_iomme (TRUE, error);
+	return grubby_set_iommu(TRUE, error);
 }
 
 static gboolean
