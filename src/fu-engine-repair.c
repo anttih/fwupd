@@ -105,8 +105,7 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 		g_set_error_literal(error,
 				    FWUPD_ERROR_NOT_SUPPORTED,
 				    FWUPD_ERROR_NOTHING_TO_DO,
-				    /* TRANSLATOR: This is an error string */
-				    _("Grubby was not installed."));
+				    "Grubby was not installed.");
 		return FALSE;
 	}
 
@@ -114,8 +113,7 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 		g_set_error_literal(error,
 				    FWUPD_ERROR_NOT_SUPPORTED,
 				    FWUPD_ERROR_NOTHING_TO_DO,
-				    /* TRANSLATOR: This is an error string */
-				    _("Fail on reading kernel parameter."));
+				    "Fail on reading kernel parameter.");
 		return FALSE;
 	}
 
@@ -125,8 +123,7 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 		g_set_error_literal(error,
 				    FWUPD_ERROR_NOT_SUPPORTED,
 				    FWUPD_ERROR_NOTHING_TO_DO,
-				    /* TRANSLATOR: This is an error string */
-				    _("IOMMU had been already set."));
+				    "IOMMU had been already set.");
 		return FALSE;
 	}
 
@@ -142,8 +139,7 @@ fu_engine_repair_unsupport(GError **error)
 	g_set_error_literal(error,
 			    FWUPD_ERROR_NOT_SUPPORTED,
 			    FWUPD_ERROR_NOTHING_TO_DO,
-			    /* TRANSLATOR: This is an error string */
-			    _("Repair item is not supported."));
+			    "Repair item is not supported.");
 	return FALSE;
 }
 
@@ -230,8 +226,7 @@ fu_engine_repair_do_undo(FuEngine *self, const gchar *key, const gchar *value, G
 		g_set_error_literal(error,
 				    FWUPD_ERROR_NOT_SUPPORTED,
 				    FWUPD_ERROR_NOTHING_TO_DO,
-				    /* TRANSLATOR: This is an error string */
-				    _("Repair item is not found."));
+				    "Repair item is not found.");
 	}
 
 	return FALSE;
