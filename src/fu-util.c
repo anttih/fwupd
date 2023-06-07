@@ -4273,7 +4273,9 @@ fu_util_auto_repair(FuUtilPrivate *priv, gchar **values, GError **error)
 				g_set_error_literal(error,
 						    FWUPD_ERROR,
 						    FWUPD_ERROR_INVALID_ARGS,
-						    "Invalid arguments, expected do or undo");
+						    /* TRANSLATOR: This is the error message for
+						     * incorrect parameter */
+						    _("Invalid arguments, expected do or undo"));
 				return FALSE;
 			}
 			break;
@@ -4303,37 +4305,42 @@ title_print_padding(const gchar *title, GString *dst_string, gsize maxlen)
 	gsize maxpad = maxlen;
 
 	if (maxlen == 0)
-	maxpad = 50;
+		maxpad = 50;
 
 	if (title == NULL || dst_string == NULL)
 		return;
-	g_string_append_printf (dst_string, "%s", title);
+	g_string_append_printf(dst_string, "%s", title);
 
-	title_len = g_utf8_strlen (title, -1) + 1;
+	title_len = g_utf8_strlen(title, -1) + 1;
 	for (gsize i = title_len; i < maxpad; i++)
-		g_string_append (dst_string, " ");
+		g_string_append(dst_string, " ");
 }
 
-
 static void
-fu_util_repair_list(FuConsole *console)
+fu_util_repair_list(FuUtilPrivate *priv, GError **error)
 {
-	g_autoptr(GString) repair_msg;
+	g_autoptr(GPtrArray) attrs = NULL;
+	g_autoptr(GString) repair_msg = g_string_new(NULL);
+	FuConsole *console = priv->console;
 
-	repair_msg = g_string_new(NULL);
-	title_print_padding(FWUPD_SECURITY_ATTR_ID_IOMMU, repair_msg, 40);
-	/* TRANSLATORS: This means repair the specific system function. */
-	g_string_append_printf(repair_msg, "%s\n", _("Enable IOMMU"));
-	title_print_padding(FWUPD_SECURITY_ATTR_ID_KERNEL_LOCKDOWN, repair_msg, 40);
-	/* TRANSLATORS: This means repair the specific system function. */
-	g_string_append_printf(repair_msg, "%s\n", _("Lockdown the Linux kernel"));
+	attrs = fwupd_client_get_host_security_attrs(priv->client, priv->cancellable, error);
+	if (attrs == NULL)
+		return;
+
+	for (guint j = 0; j < attrs->len; j++) {
+		FwupdSecurityAttr *attr = g_ptr_array_index(attrs, j);
+
+		title_print_padding(fwupd_security_attr_get_appstream_id(attr), repair_msg, 40);
+		g_string_append_printf(repair_msg, "%s\n", fwupd_security_attr_get_name(attr));
+	}
+
 	fu_console_print_full(console, FU_CONSOLE_PRINT_FLAG_NONE, "%s\n", repair_msg->str);
 }
 
 static gboolean
 fu_util_repair_list_items(FuUtilPrivate *priv, gchar **values, GError **error)
 {
-	fu_util_repair_list(priv->console);
+	fu_util_repair_list(priv, error);
 
 	return TRUE;
 }
