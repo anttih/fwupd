@@ -5875,8 +5875,6 @@ fwupd_client_emulation_save_finish(FwupdClient *self, GAsyncResult *res, GError 
 	return g_task_propagate_pointer(G_TASK(res), error);
 }
 
-
-/*HSI auto repair*/
 static void
 fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
@@ -5958,8 +5956,6 @@ fwupd_client_repair_finish(FwupdClient *self, GAsyncResult *res, GError **error)
 	g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
 	return g_task_propagate_boolean(G_TASK(res), error);
 }
-
-
 
 #ifdef SOUP_SESSION_COMPAT
 /* this is bad; we dlopen libsoup-2.4.so.1 and get the gtype manually
