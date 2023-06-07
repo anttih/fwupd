@@ -22,9 +22,11 @@
 #include <unistd.h>
 
 #include "fu-console.h"
+#include "fu-engine-repair.h"
 #include "fu-engine.h"
 #include "fu-plugin-private.h"
-#include "fu-engine-repair.h"
+#include "fu-security-attr-common.h"
+#include "fu-security-attrs-private.h"
 #include "fu-util-common.h"
 
 static gboolean
@@ -45,6 +47,10 @@ grubby_set(gboolean enable, const gchar *grubby_arg, GError **error)
 	g_autofree gchar *output = NULL;
 	g_autofree gchar *arg_string = NULL;
 	const gchar *argv_grubby[] = {"", "--update-kernel=DEFAULT", "", NULL};
+	g_autofree gchar *grubby = NULL;
+
+	grubby = fu_path_find_program("grubby", NULL);
+	argv_grubby[0] = grubby;
 
 	if (enable)
 		arg_string = g_strdup_printf("--args=%s", grubby_arg);
@@ -87,12 +93,35 @@ grubby_set_iommu(gboolean enable, GError **error)
 }
 
 static gboolean
-fu_engine_repair_kernel_lockdown(const gchar *action, GError **error)
+fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError **error)
 {
-	if (!g_strcmp0(action, "undo"))
-		return grubby_set_lockdown (FALSE, NULL);
+	FuSecurityAttrs *attrs;
+	FwupdSecurityAttr *attr;
+	guint flags;
 
-	return grubby_set_lockdown(TRUE, NULL);
+	attrs = fu_engine_get_host_security_attrs(engine);
+	if (!attrs)
+		return FALSE;
+
+	attr = fu_security_attrs_get_by_appstream_id(attrs, FWUPD_SECURITY_ATTR_ID_UEFI_SECUREBOOT);
+	if (!attr)
+		return FALSE;
+
+	flags = fwupd_security_attr_get_flags(attr);
+
+	if (flags == FWUPD_SECURITY_ATTR_FLAG_SUCCESS) {
+		g_set_error_literal(
+		    error,
+		    FWUPD_ERROR_NOT_SUPPORTED,
+		    FWUPD_ERROR_NOTHING_TO_DO,
+		    "Kernel lockdown can't be disabled when secure boot is enabled.");
+		return FALSE;
+	}
+
+	if (!g_strcmp0(action, "undo"))
+		return grubby_set_lockdown(FALSE, error);
+
+	return grubby_set_lockdown(TRUE, error);
 }
 
 static gboolean
@@ -169,7 +198,7 @@ fu_engine_repair_do_undo(FuEngine *self, const gchar *key, const gchar *value, G
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_IOMMU)) {
 		return fu_engine_repair_iommu (value, error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_LOCKDOWN)) {
-		return fu_engine_repair_kernel_lockdown(value, error);
+		return fu_engine_repair_kernel_lockdown(self, value, error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_SWAP)) {
 		return fu_engine_repair_unsupport(error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_TAINTED)) {
