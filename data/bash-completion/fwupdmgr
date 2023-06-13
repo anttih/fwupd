@@ -37,6 +37,7 @@ _fwupdmgr_cmd_list=(
 	'refresh'
 	'report-history'
 	'security'
+	'security-harden'
 	'set-approved-firmware'
 	'set-bios-setting'
 	'switch-branch'
@@ -82,6 +83,11 @@ bios_set_opts=(
 	'--no-reboot-check'
 	'--json'
 	'--verbose'
+)
+
+security_harden_opts=(
+	'do'
+	'undo'
 )
 
 _show_file_in_dir()
@@ -158,6 +164,18 @@ _show_remotes()
 	local remotes
 	remotes="$(command fwupdmgr get-remotes | command awk '/Remote ID/ { print $4 }')"
 	COMPREPLY+=( $(compgen -W "${remotes}" -- "$cur") )
+}
+
+_security_harden_show_appstream_id()
+{
+	local ids
+	ids=$(command fwupdmgr get-remotes)
+	COMPREPLY+=( $(compgen -W "${ids}" -- "$cur") )
+}
+
+_security_harden_show_action()
+{
+	COMPREPLY+=( $(compgen -W '${security_harden_opts[@]}' -- "$cur") )
 }
 
 _fwupdmgr()
@@ -270,6 +288,13 @@ _fwupdmgr()
 		#find remote ID
 		elif [[ "$args" = "4" ]]; then
 			_show_remotes
+		fi
+		;;
+	security-harden)
+		if [[ "$args" = "2" ]]; then
+			_security_harden_show_appstream_id
+		elif [[ "$args" = "3" ]]; then
+			_security_harden_show_action
 		fi
 		;;
 	*)
