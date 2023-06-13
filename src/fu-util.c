@@ -4965,13 +4965,14 @@ main(int argc, char *argv[])
 			      _("Inhibit the system to prevent upgrades"),
 			      fu_util_inhibit);
 
-	fu_util_cmd_array_add(cmd_array,
-			      "repair",
-			      /* TRANSLATORS: command argument: uppercase, spaces->dashes */
-			      _("[STREAM_ID]"),
-			      /* TRANSLATORS: command description */
-			      _("Automatically repair the system configuration to improve host security"),
-			      fu_util_auto_repair);
+	fu_util_cmd_array_add(
+	    cmd_array,
+	    "security-harden",
+	    /* TRANSLATORS: command argument: uppercase, spaces->dashes */
+	    _("[STREAM_ID]"),
+	    /* TRANSLATORS: command description */
+	    _("Automatically repair the system configuration to improve host security"),
+	    fu_util_auto_repair);
 
 	fu_util_cmd_array_add(cmd_array,
 			      "repair-list",
