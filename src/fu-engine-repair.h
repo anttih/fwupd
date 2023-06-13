@@ -10,5 +10,7 @@
 
 #include "fwupd-security-attr-private.h"
 
+#include "fu-engine.h"
+
 gboolean
 fu_engine_repair_do_undo (FuEngine *self, const gchar *key, const gchar *value, GError **error);
