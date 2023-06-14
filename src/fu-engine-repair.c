@@ -75,26 +75,35 @@ grubby_set(gboolean enable, const gchar *grubby_arg, GError **error)
 }
 
 static gboolean
-grubby_set_lockdown(gboolean enable, GError **error)
+is_kernel_parameter(const gchar *para_string, GError **error)
 {
 	g_autofree gchar *kernel_cmdline = NULL;
 	gsize length;
 
+	if (!g_file_get_contents("/proc/cmdline", &kernel_cmdline, &length, error)) {
+		g_set_error_literal(error,
+				    FWUPD_ERROR_INTERNAL,
+				    FWUPD_ERROR_READ,
+				    "Fail on reading kernel parameter.");
+		return FALSE;
+	}
+
+	if (g_str_match_string(para_string, kernel_cmdline, TRUE))
+		return TRUE;
+
+	return FALSE;
+}
+
+static gboolean
+grubby_set_lockdown(gboolean enable, GError **error)
+{
 	if (enable) {
 		return grubby_set(TRUE, "lockdown=confidentiality", error);
 	} else {
-		if (!g_file_get_contents("/proc/cmdline", &kernel_cmdline, &length, error)) {
-			g_set_error_literal(error,
-					    FWUPD_ERROR_INTERNAL,
-					    FWUPD_ERROR_READ,
-					    "Fail on reading kernel parameter.");
-			return FALSE;
-		}
-
-		if (!g_str_match_string("lockdown=", kernel_cmdline, TRUE)) {
+		if (!is_kernel_parameter("lockdown=", error)) {
 			g_set_error_literal(
 			    error,
-			    FWUPD_ERROR_INTERNAL,
+			    FWUPD_ERROR,
 			    FWUPD_ERROR_READ,
 			    "Can't be reverted since kernel lockdown was disabled.");
 			return FALSE;
@@ -107,10 +116,22 @@ grubby_set_lockdown(gboolean enable, GError **error)
 static gboolean
 grubby_set_iommu(gboolean enable, GError **error)
 {
-	if (enable)
+	gboolean ret;
+	if (enable) {
 		return grubby_set(TRUE, "iommu=force", error);
-	else
-		return grubby_set(FALSE, "iommu=force", error);
+	} else {
+		ret = is_kernel_parameter("iommu=force", error);
+		if (!*error && ret) {
+			g_printf("OK iommu ret %d\n", ret);
+			return grubby_set(FALSE, "iommu=force", error);
+		} else {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_NOTHING_TO_DO,
+					    "iommu was not set.");
+			return FALSE;
+		}
+	}
 }
 
 static gboolean
@@ -134,7 +155,7 @@ fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError *
 		if (flags == FWUPD_SECURITY_ATTR_FLAG_SUCCESS) {
 			g_set_error_literal(
 			    error,
-			    FWUPD_ERROR_NOT_SUPPORTED,
+			    FWUPD_ERROR,
 			    FWUPD_ERROR_NOTHING_TO_DO,
 			    "Kernel lockdown can't be disabled when secure boot is enabled.");
 			return FALSE;
@@ -149,9 +170,6 @@ fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError *
 static gboolean
 fu_engine_repair_iommu(const gchar *action, GError **error)
 {
-	g_autofree gchar *kernel_cmdline = NULL;
-	gsize length = 0;
-
 	if (!is_grubby_installed(error)) {
 		g_set_error_literal(error,
 				    FWUPD_ERROR_NOT_SUPPORTED,
@@ -160,26 +178,17 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 		return FALSE;
 	}
 
-	if (!g_file_get_contents("/proc/cmdline", &kernel_cmdline, &length, error)) {
-		g_set_error_literal(error,
-				    FWUPD_ERROR_INTERNAL,
-				    FWUPD_ERROR_READ,
-				    "Fail on reading kernel parameter.");
-		return FALSE;
-	}
+	if (!g_strcmp0(action, "undo"))
+		return grubby_set_iommu(FALSE, error);
 
-	if (g_str_match_string("iommu=", kernel_cmdline, TRUE) ||
-	    g_str_match_string("intel_iommu=", kernel_cmdline, TRUE) ||
-	    g_str_match_string("amd_iommu=", kernel_cmdline, TRUE)) {
+	if (is_kernel_parameter("iommu=", error) || is_kernel_parameter("intel_iommu=", error) ||
+	    is_kernel_parameter("amd_iommu=", error)) {
 		g_set_error_literal(error,
-				    FWUPD_ERROR_NOT_SUPPORTED,
+				    FWUPD_ERROR,
 				    FWUPD_ERROR_NOTHING_TO_DO,
 				    "IOMMU had been already set.");
 		return FALSE;
 	}
-
-	if (!g_strcmp0(action, "undo"))
-		return grubby_set_iommu(FALSE, error);
 
 	return grubby_set_iommu(TRUE, error);
 }
