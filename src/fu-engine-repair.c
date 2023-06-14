@@ -185,7 +185,10 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 }
 
 static gboolean
-fu_engine_repair_or_unsupport(FuEngine *engine, const gchar *appstream_id, GError **error)
+fu_engine_repair_or_unsupport(FuEngine *engine,
+			      const gchar *appstream_id,
+			      const gchar *action,
+			      GError **error)
 {
 	FuSecurityAttrs *attrs;
 	FwupdSecurityAttr *attr;
@@ -199,10 +202,17 @@ fu_engine_repair_or_unsupport(FuEngine *engine, const gchar *appstream_id, GErro
 	if (!attr)
 		return FALSE;
 
-	/* check fixable BIOS settings */
+	/* test fixable BIOS settings */
 	if (fwupd_security_attr_get_bios_setting_id(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_current_value(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_target_value(attr) != NULL) {
+		/* TODO: should we revert the bios settings? */
+		if (!g_strcmp0(action, "undo")) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR_NOT_SUPPORTED,
+					    FWUPD_ERROR_NOTHING_TO_DO,
+					    "BIOS settings can't be reverted.");
+		}
 		g_hash_table_insert(
 		    settings,
 		    g_strdup(fwupd_security_attr_get_bios_setting_id(attr)),
@@ -226,43 +236,53 @@ fu_engine_repair_do_undo(FuEngine *self, const gchar *key, const gchar *value, G
 	if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_PREBOOT_DMA_PROTECTION)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_PREBOOT_DMA_PROTECTION,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_ENCRYPTED_RAM)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_ENCRYPTED_RAM,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_ENABLED)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_ENABLED,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_VERIFIED)) {
 		return fu_engine_repair_or_unsupport(
 		    self,
 		    FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_VERIFIED,
+		    value,
 		    error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_ACM)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_ACM,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_POLICY)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_POLICY,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_OTP)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_INTEL_BOOTGUARD_OTP,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_INTEL_CET_ENABLED)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_INTEL_CET_ENABLED,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_INTEL_CET_ACTIVE)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_INTEL_CET_ACTIVE,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_INTEL_SMAP)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_INTEL_SMAP,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_IOMMU)) {
 		return fu_engine_repair_iommu (value, error);
@@ -271,105 +291,135 @@ fu_engine_repair_do_undo(FuEngine *self, const gchar *key, const gchar *value, G
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_SWAP)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_KERNEL_SWAP,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_TAINTED)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_KERNEL_TAINTED,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_MEI_MANUFACTURING_MODE)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_MEI_MANUFACTURING_MODE,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_MEI_OVERRIDE_STRAP)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_MEI_OVERRIDE_STRAP,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_MEI_KEY_MANIFEST)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_MEI_KEY_MANIFEST,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_MEI_VERSION)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_MEI_VERSION,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_SPI_BIOSWE)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_SPI_BIOSWE,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_SPI_BLE)) {
-		return fu_engine_repair_or_unsupport(self, FWUPD_SECURITY_ATTR_ID_SPI_BLE, error);
+		return fu_engine_repair_or_unsupport(self,
+						     FWUPD_SECURITY_ATTR_ID_SPI_BLE,
+						     value,
+						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_SPI_SMM_BWP)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_SPI_SMM_BWP,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_SPI_DESCRIPTOR)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_SPI_DESCRIPTOR,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_SUSPEND_TO_IDLE)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_SUSPEND_TO_IDLE,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_SUSPEND_TO_RAM)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_SUSPEND_TO_RAM,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_TPM_EMPTY_PCR)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_TPM_EMPTY_PCR,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_TPM_RECONSTRUCTION_PCR0)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_TPM_RECONSTRUCTION_PCR0,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_TPM_VERSION_20)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_TPM_VERSION_20,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_UEFI_SECUREBOOT)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_UEFI_SECUREBOOT,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_PLATFORM_DEBUG_ENABLED)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_PLATFORM_DEBUG_ENABLED,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_PLATFORM_FUSED)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_PLATFORM_FUSED,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_PLATFORM_DEBUG_LOCKED)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_PLATFORM_DEBUG_LOCKED,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_UEFI_PK)) {
-		return fu_engine_repair_or_unsupport(self, FWUPD_SECURITY_ATTR_ID_UEFI_PK, error);
+		return fu_engine_repair_or_unsupport(self,
+						     FWUPD_SECURITY_ATTR_ID_UEFI_PK,
+						     value,
+						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_SUPPORTED_CPU)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_SUPPORTED_CPU,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_AMD_ROLLBACK_PROTECTION)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_AMD_ROLLBACK_PROTECTION,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_AMD_SPI_WRITE_PROTECTION)) {
 		return fu_engine_repair_or_unsupport(
 		    self,
 		    FWUPD_SECURITY_ATTR_ID_AMD_SPI_WRITE_PROTECTION,
+		    value,
 		    error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_AMD_SPI_REPLAY_PROTECTION)) {
 		return fu_engine_repair_or_unsupport(
 		    self,
 		    FWUPD_SECURITY_ATTR_ID_AMD_SPI_REPLAY_PROTECTION,
+		    value,
 		    error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_HOST_EMULATION)) {
 		return fu_engine_repair_or_unsupport(self,
 						     FWUPD_SECURITY_ATTR_ID_HOST_EMULATION,
+						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_BIOS_ROLLBACK_PROTECTION)) {
 		return fu_engine_repair_or_unsupport(
 		    self,
 		    FWUPD_SECURITY_ATTR_ID_BIOS_ROLLBACK_PROTECTION,
+		    value,
 		    error);
 	} else {
 		g_set_error_literal(error,
