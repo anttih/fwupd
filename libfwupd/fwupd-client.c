@@ -5896,7 +5896,7 @@ fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 /**
  * fwupd_client_repair_async:
  * @self: a #FwupdClient
- * @repair_item: ApStreamID
+ * @appstream_id: AppStreamID
  * @action: action
  * @cancellable: (nullable): optional #GCancellable
  * @callback: (scope async) (closure callback_data): the function to run on completion
@@ -5908,7 +5908,7 @@ fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
  **/
 void
 fwupd_client_repair_async(FwupdClient *self,
-			  const gchar *repair_item,
+			  const gchar *appstream_id,
 			  const gchar *action,
 			  GCancellable *cancellable,
 			  GAsyncReadyCallback callback,
@@ -5917,7 +5917,7 @@ fwupd_client_repair_async(FwupdClient *self,
 	FwupdClientPrivate *priv = GET_PRIVATE(self);
 	g_autoptr(GTask) task = NULL;
 
-	g_return_if_fail(repair_item != NULL);
+	g_return_if_fail(appstream_id != NULL);
 	g_return_if_fail(action != NULL);
 	g_return_if_fail(FWUPD_IS_CLIENT(self));
 	g_return_if_fail(cancellable == NULL || G_IS_CANCELLABLE(cancellable));
@@ -5928,7 +5928,7 @@ fwupd_client_repair_async(FwupdClient *self,
 
 	g_dbus_proxy_call(priv->proxy,
 			  "Repair",
-			  g_variant_new("(ss)", repair_item, action),
+			  g_variant_new("(ss)", appstream_id, action),
 			  G_DBUS_CALL_FLAGS_NONE,
 			  FWUPD_CLIENT_DBUS_PROXY_TIMEOUT,
 			  cancellable,

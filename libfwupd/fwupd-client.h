@@ -425,7 +425,7 @@ fwupd_client_emulation_save_finish(FwupdClient *self,
 
 void
 fwupd_client_repair_async(FwupdClient *self,
-			  const gchar *repair_item,
+			  const gchar *appstream_id,
 			  const gchar *action,
 			  GCancellable *cancellable,
 			  GAsyncReadyCallback callback,
