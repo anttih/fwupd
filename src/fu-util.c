@@ -4257,18 +4257,15 @@ fu_util_auto_repair(FuUtilPrivate *priv, gchar **values, GError **error)
 	gint ret = 0;
 
 	for (guint i = 0; values[i] != NULL; i++) {
-		fu_console_print(priv->console,
-				 "%s: %s",
-				 _("Reparing"),
-				 values[i]);
+		fu_console_print(priv->console, "%s: %s", _("Reparing"), values[i]);
 
 		if (i == 0) {
 			repair_name = values[i];
 		} else if (i == 1) {
-			if (!g_strcmp0 (values[i], "do")) {
-				action = g_strdup_printf ("do");
-			} else if (!g_strcmp0 (values[i], "undo")) {
-				action = g_strdup_printf ("undo");
+			if (!g_strcmp0(values[i], "do")) {
+				action = g_strdup_printf("do");
+			} else if (!g_strcmp0(values[i], "undo")) {
+				action = g_strdup_printf("undo");
 			} else {
 				g_set_error_literal(error,
 						    FWUPD_ERROR,
@@ -4283,17 +4280,16 @@ fu_util_auto_repair(FuUtilPrivate *priv, gchar **values, GError **error)
 	}
 
 	if (!action)
-		action = g_strdup_printf ("do");
+		action = g_strdup_printf("do");
 
-	ret = fwupd_client_repair(priv->client,
-				 repair_name,
-				 action,
-				 priv->cancellable,
-				 error);
+	ret = fwupd_client_repair(priv->client, repair_name, action, priv->cancellable, error);
 	if (!ret)
 		return FALSE;
 
-	fu_console_print_full(priv->console, FU_CONSOLE_PRINT_FLAG_NONE, "%s\n", _("Repair Success"));
+	fu_console_print_full(priv->console,
+			      FU_CONSOLE_PRINT_FLAG_NONE,
+			      "%s\n",
+			      _("Repair Success"));
 
 	return TRUE;
 }

@@ -285,7 +285,7 @@ fu_engine_repair_do_undo(FuEngine *self, const gchar *key, const gchar *value, G
 						     value,
 						     error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_IOMMU)) {
-		return fu_engine_repair_iommu (value, error);
+		return fu_engine_repair_iommu(value, error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_LOCKDOWN)) {
 		return fu_engine_repair_kernel_lockdown(self, value, error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_SWAP)) {
