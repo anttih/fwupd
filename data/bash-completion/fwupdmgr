@@ -169,7 +169,7 @@ _show_remotes()
 _security_harden_show_appstream_id()
 {
 	local ids
-	ids=$(command fwupdmgr get-remotes)
+	ids=$(command fwupdmgr repair-list)
 	COMPREPLY+=( $(compgen -W "${ids}" -- "$cur") )
 }
 
