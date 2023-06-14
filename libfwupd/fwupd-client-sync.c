@@ -2690,7 +2690,7 @@ fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 /**
  * fwupd_client_repair:
  * @self: a #FwupdClient
- * @repair_item: the AppStream_id
+ * @appstream_id: the AppStream_id
  * @action: specify do or undo
  * @cancellable: (nullable): optional #GCancellable
  * @error: (nullable): optional return location for an error
@@ -2703,7 +2703,7 @@ fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
  **/
 gboolean
 fwupd_client_repair(FwupdClient *self,
-		    const gchar *repair_item,
+		    const gchar *appstream_id,
 		    const gchar *action,
 		    GCancellable *cancellable,
 		    GError **error)
@@ -2711,7 +2711,7 @@ fwupd_client_repair(FwupdClient *self,
 	g_autoptr(FwupdClientHelper) helper = NULL;
 
 	g_return_val_if_fail(FWUPD_IS_CLIENT(self), FALSE);
-	g_return_val_if_fail(repair_item != NULL, FALSE);
+	g_return_val_if_fail(appstream_id != NULL, FALSE);
 	g_return_val_if_fail(action != NULL, FALSE);
 	g_return_val_if_fail(cancellable == NULL || G_IS_CANCELLABLE(cancellable), FALSE);
 	g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
@@ -2723,7 +2723,7 @@ fwupd_client_repair(FwupdClient *self,
 	/* call async version and run loop until complete */
 	helper = fwupd_client_helper_new(self);
 	fwupd_client_repair_async(self,
-				  repair_item,
+				  appstream_id,
 				  action,
 				  cancellable,
 				  fwupd_client_repair_cb,

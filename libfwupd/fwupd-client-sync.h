@@ -266,7 +266,7 @@ fwupd_client_emulation_save(FwupdClient *self,
 
 gboolean
 fwupd_client_repair(FwupdClient *self,
-		    const gchar *repair_item,
+		    const gchar *appstream_id,
 		    const gchar *action,
 		    GCancellable *cancellable,
 		    GError **error);
