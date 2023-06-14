@@ -839,7 +839,7 @@
         <doc:doc>
           <doc:summary>
             <doc:para>
-              The fwupd Appstream ID, e.g. 'org.fwupd.hsi.Kernel.Lockdown'.
+              The fwupd AppStream ID, e.g. 'org.fwupd.hsi.Kernel.Lockdown'.
             </doc:para>
           </doc:summary>
         </doc:doc>
