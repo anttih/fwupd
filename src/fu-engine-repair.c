@@ -77,10 +77,31 @@ grubby_set(gboolean enable, const gchar *grubby_arg, GError **error)
 static gboolean
 grubby_set_lockdown(gboolean enable, GError **error)
 {
-	if (enable)
+	g_autofree gchar *kernel_cmdline = NULL;
+	gsize length;
+
+	if (enable) {
 		return grubby_set(TRUE, "lockdown=confidentiality", error);
-	else
+	} else {
+		if (!g_file_get_contents("/proc/cmdline", &kernel_cmdline, &length, error)) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR_INTERNAL,
+					    FWUPD_ERROR_READ,
+					    "Fail on reading kernel parameter.");
+			return FALSE;
+		}
+
+		if (!g_str_match_string("lockdown=", kernel_cmdline, TRUE)) {
+			g_set_error_literal(
+			    error,
+			    FWUPD_ERROR_INTERNAL,
+			    FWUPD_ERROR_READ,
+			    "Can't be reverted since kernel lockdown was disabled.");
+			return FALSE;
+		}
+
 		return grubby_set(FALSE, "lockdown=confidentiality", error);
+	}
 }
 
 static gboolean
@@ -109,17 +130,18 @@ fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError *
 
 	flags = fwupd_security_attr_get_flags(attr);
 
-	if (flags == FWUPD_SECURITY_ATTR_FLAG_SUCCESS) {
-		g_set_error_literal(
-		    error,
-		    FWUPD_ERROR_NOT_SUPPORTED,
-		    FWUPD_ERROR_NOTHING_TO_DO,
-		    "Kernel lockdown can't be disabled when secure boot is enabled.");
-		return FALSE;
+	if (!g_strcmp0(action, "undo")) {
+		if (flags == FWUPD_SECURITY_ATTR_FLAG_SUCCESS) {
+			g_set_error_literal(
+			    error,
+			    FWUPD_ERROR_NOT_SUPPORTED,
+			    FWUPD_ERROR_NOTHING_TO_DO,
+			    "Kernel lockdown can't be disabled when secure boot is enabled.");
+			return FALSE;
+		} else {
+			return grubby_set_lockdown(FALSE, error);
+		}
 	}
-
-	if (!g_strcmp0(action, "undo"))
-		return grubby_set_lockdown(FALSE, error);
 
 	return grubby_set_lockdown(TRUE, error);
 }
@@ -140,8 +162,8 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 
 	if (!g_file_get_contents("/proc/cmdline", &kernel_cmdline, &length, error)) {
 		g_set_error_literal(error,
-				    FWUPD_ERROR_NOT_SUPPORTED,
-				    FWUPD_ERROR_NOTHING_TO_DO,
+				    FWUPD_ERROR_INTERNAL,
+				    FWUPD_ERROR_READ,
 				    "Fail on reading kernel parameter.");
 		return FALSE;
 	}
@@ -185,13 +207,9 @@ fu_engine_repair_or_unsupport(FuEngine *engine, const gchar *appstream_id, GErro
 		    settings,
 		    g_strdup(fwupd_security_attr_get_bios_setting_id(attr)),
 		    g_strdup(fwupd_security_attr_get_bios_setting_target_value(attr)));
-		if (!fu_engine_modify_bios_settings(engine, settings, FALSE, error)) {
-			g_set_error_literal(error,
-					    FWUPD_ERROR_INTERNAL,
-					    FWUPD_ERROR_INTERNAL,
-					    "Fail on BIOS updating.");
+		if (!fu_engine_modify_bios_settings(engine, settings, FALSE, error))
 			return FALSE;
-		}
+
 		return TRUE;
 	}
 
