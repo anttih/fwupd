@@ -4251,7 +4251,7 @@ fu_util_get_bios_setting(FuUtilPrivate *priv, gchar **values, GError **error)
 static gboolean
 fu_util_auto_repair(FuUtilPrivate *priv, gchar **values, GError **error)
 {
-	gchar *repair_name = NULL;
+	gchar *appstream_id = NULL;
 	g_autofree gchar *action = NULL;
 	g_autoptr(GList) fu_repair_list = NULL;
 	gint ret = 0;
@@ -4260,7 +4260,7 @@ fu_util_auto_repair(FuUtilPrivate *priv, gchar **values, GError **error)
 		fu_console_print(priv->console, "%s: %s", _("Reparing"), values[i]);
 
 		if (i == 0) {
-			repair_name = values[i];
+			appstream_id = values[i];
 		} else if (i == 1) {
 			if (!g_strcmp0(values[i], "do")) {
 				action = g_strdup_printf("do");
@@ -4279,10 +4279,20 @@ fu_util_auto_repair(FuUtilPrivate *priv, gchar **values, GError **error)
 		}
 	}
 
+	if (!appstream_id) {
+		g_set_error_literal(error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_INVALID_ARGS,
+				    /* TRANSLATOR: This is the error message for
+				     * incorrect parameter */
+				    _("Invalid arguments, expected an AppStream ID"));
+		return FALSE;
+	}
+
 	if (!action)
 		action = g_strdup_printf("do");
 
-	ret = fwupd_client_repair(priv->client, repair_name, action, priv->cancellable, error);
+	ret = fwupd_client_repair(priv->client, appstream_id, action, priv->cancellable, error);
 	if (!ret)
 		return FALSE;
 
