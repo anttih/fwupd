@@ -142,12 +142,23 @@ fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError *
 	guint flags;
 
 	attrs = fu_engine_get_host_security_attrs(engine);
-	if (!attrs)
+	if (!attrs) {
+		printf("return here\n");
+		g_set_error_literal(error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_INTERNAL,
+				    "Fail on getting security attributes.");
 		return FALSE;
+	}
 
 	attr = fu_security_attrs_get_by_appstream_id(attrs, FWUPD_SECURITY_ATTR_ID_UEFI_SECUREBOOT);
-	if (!attr)
+	if (attr) {
+		g_set_error_literal(error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_READ,
+				    "Secure boot attribute can't be found.");
 		return FALSE;
+	}
 
 	flags = fwupd_security_attr_get_flags(attr);
 
