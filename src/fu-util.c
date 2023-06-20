@@ -4323,7 +4323,7 @@ title_print_padding(const gchar *title, GString *dst_string, gsize maxlen)
 }
 
 static void
-fu_util_repair_list(FuUtilPrivate *priv, GError **error)
+fu_util_security_list(FuUtilPrivate *priv, GError **error)
 {
 	g_autoptr(GPtrArray) attrs = NULL;
 	g_autoptr(GString) repair_msg = g_string_new(NULL);
@@ -4344,9 +4344,9 @@ fu_util_repair_list(FuUtilPrivate *priv, GError **error)
 }
 
 static gboolean
-fu_util_repair_list_items(FuUtilPrivate *priv, gchar **values, GError **error)
+fu_util_security_list_items(FuUtilPrivate *priv, gchar **values, GError **error)
 {
-	fu_util_repair_list(priv, error);
+	fu_util_security_list(priv, error);
 
 	return TRUE;
 }
@@ -4985,7 +4985,7 @@ main(int argc, char *argv[])
 			      NULL,
 			      /* TRANSLATORS: command description */
 			      _("List auto-repairing items"),
-			      fu_util_repair_list_items);
+			      fu_util_security_list_items);
 
 	fu_util_cmd_array_add(cmd_array,
 			      "uninhibit",
