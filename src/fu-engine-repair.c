@@ -172,8 +172,8 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 {
 	if (!is_grubby_installed(error)) {
 		g_set_error_literal(error,
+				    FWUPD_ERROR,
 				    FWUPD_ERROR_NOT_SUPPORTED,
-				    FWUPD_ERROR_NOTHING_TO_DO,
 				    "Grubby was not installed.");
 		return FALSE;
 	}
