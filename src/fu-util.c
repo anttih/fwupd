@@ -4981,7 +4981,7 @@ main(int argc, char *argv[])
 	    fu_util_auto_repair);
 
 	fu_util_cmd_array_add(cmd_array,
-			      "repair-list",
+			      "security-harden-list",
 			      NULL,
 			      /* TRANSLATORS: command description */
 			      _("List auto-repairing items"),
