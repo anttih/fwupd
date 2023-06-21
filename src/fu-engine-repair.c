@@ -75,71 +75,38 @@ grubby_set(gboolean enable, const gchar *grubby_arg, GError **error)
 }
 
 static gboolean
-is_kernel_parameter(const gchar *para_string, GError **error)
-{
-	g_autofree gchar *kernel_cmdline = NULL;
-	gsize length;
-
-	if (!g_file_get_contents("/proc/cmdline", &kernel_cmdline, &length, error)) {
-		g_set_error_literal(error,
-				    FWUPD_ERROR_INTERNAL,
-				    FWUPD_ERROR_READ,
-				    "Fail on reading kernel parameter.");
-		return FALSE;
-	}
-
-	if (g_str_match_string(para_string, kernel_cmdline, TRUE))
-		return TRUE;
-
-	return FALSE;
-}
-
-static gboolean
 grubby_set_lockdown(gboolean enable, GError **error)
 {
-	if (enable) {
+	if (enable)
 		return grubby_set(TRUE, "lockdown=confidentiality", error);
-	} else {
-		if (!is_kernel_parameter("lockdown=", error)) {
-			g_set_error_literal(
-			    error,
-			    FWUPD_ERROR,
-			    FWUPD_ERROR_READ,
-			    "Can't be reverted since kernel lockdown was disabled.");
-			return FALSE;
-		}
-
+	else
 		return grubby_set(FALSE, "lockdown=confidentiality", error);
-	}
 }
 
 static gboolean
 grubby_set_iommu(gboolean enable, GError **error)
 {
-	gboolean ret;
-	if (enable) {
+	if (enable)
 		return grubby_set(TRUE, "iommu=force", error);
-	} else {
-		ret = is_kernel_parameter("iommu=force", error);
-		if (!*error && ret) {
-			g_printf("OK iommu ret %d\n", ret);
-			return grubby_set(FALSE, "iommu=force", error);
-		} else {
-			g_set_error_literal(error,
-					    FWUPD_ERROR,
-					    FWUPD_ERROR_NOTHING_TO_DO,
-					    "iommu was not set.");
-			return FALSE;
-		}
-	}
+	else
+		return grubby_set(FALSE, "iommu=force", error);
 }
 
 static gboolean
 fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError **error)
 {
+	g_autoptr(GHashTable) kernel_param = NULL;
 	FuSecurityAttrs *attrs;
 	FwupdSecurityAttr *attr;
 	guint flags;
+
+	if (!is_grubby_installed(error)) {
+		g_set_error_literal(error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_NOT_SUPPORTED,
+				    "Grubby was not installed.");
+		return FALSE;
+	}
 
 	attrs = fu_engine_get_host_security_attrs(engine);
 	if (!attrs) {
@@ -152,7 +119,7 @@ fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError *
 	}
 
 	attr = fu_security_attrs_get_by_appstream_id(attrs, FWUPD_SECURITY_ATTR_ID_UEFI_SECUREBOOT);
-	if (attr) {
+	if (!attr) {
 		g_set_error_literal(error,
 				    FWUPD_ERROR,
 				    FWUPD_ERROR_READ,
@@ -171,6 +138,19 @@ fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError *
 			    "Kernel lockdown can't be disabled when secure boot is enabled.");
 			return FALSE;
 		} else {
+			kernel_param = fu_kernel_get_cmdline(error);
+			if (!kernel_param) {
+				return FALSE;
+			}
+
+			if (!g_hash_table_contains(kernel_param, "lockdown")) {
+				g_set_error_literal(
+				    error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_READ,
+				    "Can't be reverted since kernel lockdown was disabled.");
+				return FALSE;
+			}
 			return grubby_set_lockdown(FALSE, error);
 		}
 	}
@@ -181,6 +161,9 @@ fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError *
 static gboolean
 fu_engine_repair_iommu(const gchar *action, GError **error)
 {
+	g_autoptr(GHashTable) kernel_param = NULL;
+	gchar *value = NULL;
+
 	if (!is_grubby_installed(error)) {
 		g_set_error_literal(error,
 				    FWUPD_ERROR,
@@ -189,11 +172,35 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 		return FALSE;
 	}
 
-	if (!g_strcmp0(action, "undo"))
-		return grubby_set_iommu(FALSE, error);
+	kernel_param = fu_kernel_get_cmdline(error);
+	if (!kernel_param) {
+		return FALSE;
+	}
 
-	if (is_kernel_parameter("iommu=", error) || is_kernel_parameter("intel_iommu=", error) ||
-	    is_kernel_parameter("amd_iommu=", error)) {
+	if (!g_strcmp0(action, "undo")) {
+		value = g_hash_table_lookup(kernel_param, "iommu");
+		if (!value) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_NOTHING_TO_DO,
+					    "IOMMU was not set.");
+			return FALSE;
+		}
+
+		if (g_strcmp0(value, "force\n")) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_NOTHING_TO_DO,
+					    "IOMMU was not set to \"force\"");
+			return FALSE;
+		}
+
+		return grubby_set_iommu(FALSE, error);
+	}
+
+	if (g_hash_table_contains(kernel_param, "iommu") ||
+	    g_hash_table_contains(kernel_param, "intel_iommu") ||
+	    g_hash_table_contains(kernel_param, "amd_iommu")) {
 		g_set_error_literal(error,
 				    FWUPD_ERROR,
 				    FWUPD_ERROR_NOTHING_TO_DO,
