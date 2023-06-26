@@ -211,6 +211,31 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 }
 
 static gboolean
+fu_engine_repair_bios_revert(FuEngine *engine,
+			     const gchar *appstream_id,
+			     const gchar *action,
+			     const gchar *bios_id,
+			     const gchar *current_value,
+			     GError **error)
+{
+	g_autofree gchar *previous_setting;
+	g_autoptr(GHashTable) settings =
+	    g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
+
+	previous_setting =
+	    fu_engine_get_previous_bios_setting(engine, appstream_id, current_value, error);
+	if (!previous_setting)
+		return FALSE;
+
+	g_hash_table_insert(settings, g_strdup(bios_id), g_strdup(previous_setting));
+
+	if (!fu_engine_modify_bios_settings(engine, settings, FALSE, error))
+		return FALSE;
+
+	return TRUE;
+}
+
+static gboolean
 fu_engine_repair_or_unsupport(FuEngine *engine,
 			      FuSecurityAttrs *attrs,
 			      const gchar *appstream_id,
@@ -234,12 +259,14 @@ fu_engine_repair_or_unsupport(FuEngine *engine,
 	if (fwupd_security_attr_get_bios_setting_id(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_current_value(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_target_value(attr) != NULL) {
-		/* TODO: should we revert the bios settings? */
 		if (!g_strcmp0(action, "undo")) {
-			g_set_error_literal(error,
-					    FWUPD_ERROR_NOT_SUPPORTED,
-					    FWUPD_ERROR_NOTHING_TO_DO,
-					    "BIOS settings can't be reverted.");
+			return fu_engine_repair_bios_revert(
+			    engine,
+			    appstream_id,
+			    action,
+			    fwupd_security_attr_get_bios_setting_id(attr),
+			    fwupd_security_attr_get_bios_setting_current_value(attr),
+			    error);
 		}
 		g_hash_table_insert(
 		    settings,
@@ -285,7 +312,7 @@ fu_engine_repair_do_undo(FuEngine *self, const gchar *key, const gchar *value, G
 
 	for (guint i = 0; i < attrs_array->len; i++) {
 		FwupdSecurityAttr *attr = g_ptr_array_index(attrs_array, i);
-		gchar *appstream_tmp = fwupd_security_attr_get_appstream_id(attr);
+		const gchar *appstream_tmp = fwupd_security_attr_get_appstream_id(attr);
 		if (!g_strcmp0(key, appstream_tmp)) {
 			return fu_engine_repair_or_unsupport(self, attrs, key, value, error);
 		}

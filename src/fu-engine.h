@@ -251,3 +251,9 @@ gboolean
 fu_engine_emulation_load(FuEngine *self, GBytes *data, GError **error);
 GBytes *
 fu_engine_emulation_save(FuEngine *self, GError **error);
+
+gchar *
+fu_engine_get_previous_bios_setting(FuEngine *self,
+				    const gchar *appstream_id,
+				    const gchar *current_setting,
+				    GError **error);
