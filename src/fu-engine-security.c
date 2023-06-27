@@ -128,6 +128,10 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, guint64 action, GError **er
 
 	flags = fwupd_security_attr_get_flags(attr);
 
+	kernel_param = fu_kernel_get_cmdline(error);
+	if (!kernel_param)
+		return FALSE;
+
 	switch (action) {
 	case FU_ENGINE_SECURITY_HARDEN_UNSET:
 		if (flags == FWUPD_SECURITY_ATTR_FLAG_SUCCESS) {
@@ -138,11 +142,6 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, guint64 action, GError **er
 			    "Kernel lockdown can't be disabled when secure boot is enabled.");
 			return FALSE;
 		} else {
-			kernel_param = fu_kernel_get_cmdline(error);
-			if (!kernel_param) {
-				return FALSE;
-			}
-
 			if (!g_hash_table_contains(kernel_param, "lockdown")) {
 				g_set_error_literal(
 				    error,
@@ -156,7 +155,15 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, guint64 action, GError **er
 		break;
 
 	case FU_ENGINE_SECURITY_HARDEN_SET:
+		if (g_hash_table_contains(kernel_param, "lockdown")) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_READ,
+					    "Kernel lockdown has already been enabled.");
+			return FALSE;
+		}
 		return grubby_set_lockdown(TRUE, error);
+		break;
 
 	default:
 		g_set_error_literal(error,
