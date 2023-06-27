@@ -42,7 +42,7 @@ fwupd_engine_src = [
   'fu-engine-config.c',
   'fu-engine-helper.c',
   'fu-engine-request.c',
-  'fu-engine-repair.c',
+  'fu-engine-security.c',
   'fu-history.c',
   'fu-idle.c',
   'fu-polkit-authority.c',

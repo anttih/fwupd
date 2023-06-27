@@ -27,7 +27,7 @@
 #include "fu-bios-settings-private.h"
 #include "fu-daemon.h"
 #include "fu-device-private.h"
-#include "fu-engine-repair.h"
+#include "fu-engine-security.h"
 #include "fu-engine.h"
 #include "fu-polkit-authority.h"
 #include "fu-release.h"
@@ -530,7 +530,7 @@ fu_daemon_authorize_repair_cb(GObject *source, GAsyncResult *res, gpointer user_
 	}
 
 	/* success */
-	if (!fu_engine_repair_do_undo(helper->self->engine, helper->key, helper->value, &error)) {
+	if (!fu_engine_security_harden(helper->self->engine, helper->key, helper->value, &error)) {
 		g_dbus_method_invocation_return_gerror(helper->invocation, error);
 		return;
 	}

@@ -22,7 +22,7 @@
 #include <unistd.h>
 
 #include "fu-console.h"
-#include "fu-engine-repair.h"
+#include "fu-engine-security.h"
 #include "fu-engine.h"
 #include "fu-plugin-private.h"
 #include "fu-security-attr-common.h"
@@ -93,7 +93,7 @@ grubby_set_iommu(gboolean enable, GError **error)
 }
 
 static gboolean
-fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError **error)
+fu_engine_security_kernel_lockdown(FuEngine *engine, const gchar *action, GError **error)
 {
 	g_autoptr(GHashTable) kernel_param = NULL;
 	FuSecurityAttrs *attrs;
@@ -158,7 +158,7 @@ fu_engine_repair_kernel_lockdown(FuEngine *engine, const gchar *action, GError *
 }
 
 static gboolean
-fu_engine_repair_iommu(const gchar *action, GError **error)
+fu_engine_security_iommu_remediation(const gchar *action, GError **error)
 {
 	g_autoptr(GHashTable) kernel_param = NULL;
 	gchar *value = NULL;
@@ -211,12 +211,12 @@ fu_engine_repair_iommu(const gchar *action, GError **error)
 }
 
 static gboolean
-fu_engine_repair_bios_revert(FuEngine *engine,
-			     const gchar *appstream_id,
-			     const gchar *action,
-			     const gchar *bios_id,
-			     const gchar *current_value,
-			     GError **error)
+fu_engine_security_bios_setting_revert(FuEngine *engine,
+				       const gchar *appstream_id,
+				       const gchar *action,
+				       const gchar *bios_id,
+				       const gchar *current_value,
+				       GError **error)
 {
 	g_autofree gchar *previous_setting;
 	g_autoptr(GHashTable) settings =
@@ -236,11 +236,11 @@ fu_engine_repair_bios_revert(FuEngine *engine,
 }
 
 static gboolean
-fu_engine_repair_or_unsupport(FuEngine *engine,
-			      FuSecurityAttrs *attrs,
-			      const gchar *appstream_id,
-			      const gchar *action,
-			      GError **error)
+fu_engine_security_remediation(FuEngine *engine,
+			       FuSecurityAttrs *attrs,
+			       const gchar *appstream_id,
+			       const gchar *action,
+			       GError **error)
 {
 	FwupdSecurityAttr *attr;
 	g_autoptr(GHashTable) settings =
@@ -260,7 +260,7 @@ fu_engine_repair_or_unsupport(FuEngine *engine,
 	    fwupd_security_attr_get_bios_setting_current_value(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_target_value(attr) != NULL) {
 		if (!g_strcmp0(action, "undo")) {
-			return fu_engine_repair_bios_revert(
+			return fu_engine_security_bios_setting_revert(
 			    engine,
 			    appstream_id,
 			    action,
@@ -286,16 +286,16 @@ fu_engine_repair_or_unsupport(FuEngine *engine,
 }
 
 gboolean
-fu_engine_repair_do_undo(FuEngine *self, const gchar *key, const gchar *value, GError **error)
+fu_engine_security_harden(FuEngine *self, const gchar *key, const gchar *value, GError **error)
 {
 	g_autoptr(GPtrArray) attrs_array;
 	FuSecurityAttrs *attrs;
 
 	/* dedicated treatment */
 	if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_IOMMU)) {
-		return fu_engine_repair_iommu(value, error);
+		return fu_engine_security_iommu_remediation(value, error);
 	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_LOCKDOWN)) {
-		return fu_engine_repair_kernel_lockdown(self, value, error);
+		return fu_engine_security_kernel_lockdown(self, value, error);
 	}
 
 	/* for those BIOS fixes and unsupported items */
@@ -314,7 +314,7 @@ fu_engine_repair_do_undo(FuEngine *self, const gchar *key, const gchar *value, G
 		FwupdSecurityAttr *attr = g_ptr_array_index(attrs_array, i);
 		const gchar *appstream_tmp = fwupd_security_attr_get_appstream_id(attr);
 		if (!g_strcmp0(key, appstream_tmp)) {
-			return fu_engine_repair_or_unsupport(self, attrs, key, value, error);
+			return fu_engine_security_remediation(self, attrs, key, value, error);
 		}
 	}
 
