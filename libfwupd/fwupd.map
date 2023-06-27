@@ -949,8 +949,8 @@ LIBFWUPD_1.9.1 {
 
 LIBFWUPD_1.9.2 {
   global:
-    fwupd_client_repair;
-    fwupd_client_repair_async;
-    fwupd_client_repair_finish;
+    fwupd_client_security_harden;
+    fwupd_client_security_harden_async;
+    fwupd_client_security_harden_finish;
   local: *;
 } LIBFWUPD_1.9.1;

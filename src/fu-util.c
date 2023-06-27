@@ -4249,7 +4249,7 @@ fu_util_get_bios_setting(FuUtilPrivate *priv, gchar **values, GError **error)
 }
 
 static gboolean
-fu_util_auto_repair(FuUtilPrivate *priv, gchar **values, GError **error)
+fu_util_security_harden(FuUtilPrivate *priv, gchar **values, GError **error)
 {
 	gchar *appstream_id = NULL;
 	g_autofree gchar *action = NULL;
@@ -4292,7 +4292,11 @@ fu_util_auto_repair(FuUtilPrivate *priv, gchar **values, GError **error)
 	if (!action)
 		action = g_strdup_printf("do");
 
-	ret = fwupd_client_repair(priv->client, appstream_id, action, priv->cancellable, error);
+	ret = fwupd_client_security_harden(priv->client,
+					   appstream_id,
+					   action,
+					   priv->cancellable,
+					   error);
 	if (!ret)
 		return FALSE;
 
@@ -4978,7 +4982,7 @@ main(int argc, char *argv[])
 	    _("[STREAM_ID]"),
 	    /* TRANSLATORS: command description */
 	    _("Automatically repair the system configuration to improve host security"),
-	    fu_util_auto_repair);
+	    fu_util_security_harden);
 
 	fu_util_cmd_array_add(cmd_array,
 			      "security-harden-list",

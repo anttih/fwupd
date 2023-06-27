@@ -5876,7 +5876,7 @@ fwupd_client_emulation_save_finish(FwupdClient *self, GAsyncResult *res, GError 
 }
 
 static void
-fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
+fwupd_client_security_harden_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
 	g_autoptr(GTask) task = G_TASK(user_data);
 	g_autoptr(GError) error = NULL;
@@ -5894,7 +5894,7 @@ fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 }
 
 /**
- * fwupd_client_repair_async:
+ * fwupd_client_security_harden_async:
  * @self: a #FwupdClient
  * @appstream_id: AppStreamID
  * @action: action
@@ -5902,17 +5902,17 @@ fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
  * @callback: (scope async) (closure callback_data): the function to run on completion
  * @callback_data: the data to pass to @callback
  *
- * Repair the failed security attribute with blocking.
+ * Harden the security attribute with blocking.
  *
  * Since: 1.9.2
  **/
 void
-fwupd_client_repair_async(FwupdClient *self,
-			  const gchar *appstream_id,
-			  const gchar *action,
-			  GCancellable *cancellable,
-			  GAsyncReadyCallback callback,
-			  gpointer callback_data)
+fwupd_client_security_harden_async(FwupdClient *self,
+				   const gchar *appstream_id,
+				   const gchar *action,
+				   GCancellable *cancellable,
+				   GAsyncReadyCallback callback,
+				   gpointer callback_data)
 {
 	FwupdClientPrivate *priv = GET_PRIVATE(self);
 	g_autoptr(GTask) task = NULL;
@@ -5932,24 +5932,24 @@ fwupd_client_repair_async(FwupdClient *self,
 			  G_DBUS_CALL_FLAGS_NONE,
 			  FWUPD_CLIENT_DBUS_PROXY_TIMEOUT,
 			  cancellable,
-			  fwupd_client_repair_cb,
+			  fwupd_client_security_harden_cb,
 			  g_steal_pointer(&task));
 }
 
 /**
- * fwupd_client_repair_finish:
+ * fwupd_client_security_harden_finish:
  * @self: a #FwupdClient
  * @res: (not nullable): the asynchronous result
  * @error: (nullable): optional return location for an error
  *
- * Gets the result of [method@FwupdClient.repair_async].
+ * Gets the result of [method@FwupdClient.security_harden_async].
  *
  * Returns: %TRUE for success
  *
  * Since: 1.9.2
  **/
 gboolean
-fwupd_client_repair_finish(FwupdClient *self, GAsyncResult *res, GError **error)
+fwupd_client_security_harden_finish(FwupdClient *self, GAsyncResult *res, GError **error)
 {
 	g_return_val_if_fail(FWUPD_IS_CLIENT(self), FALSE);
 	g_return_val_if_fail(g_task_is_valid(res, self), FALSE);

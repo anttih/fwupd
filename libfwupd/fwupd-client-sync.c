@@ -2677,36 +2677,35 @@ fwupd_client_emulation_save(FwupdClient *self, GCancellable *cancellable, GError
 	return g_steal_pointer(&helper->bytes);
 }
 
-
 static void
-fwupd_client_repair_cb(GObject *source, GAsyncResult *res, gpointer user_data)
+fwupd_client_security_harden_cb(GObject *source, GAsyncResult *res, gpointer user_data)
 {
 	FwupdClientHelper *helper = (FwupdClientHelper *)user_data;
 	helper->ret =
-	    fwupd_client_repair_finish(FWUPD_CLIENT(source), res, &helper->error);
+	    fwupd_client_security_harden_finish(FWUPD_CLIENT(source), res, &helper->error);
 	g_main_loop_quit(helper->loop);
 }
 
 /**
- * fwupd_client_repair:
+ * fwupd_client_security_harden:
  * @self: a #FwupdClient
  * @appstream_id: the AppStream_id
  * @action: specify do or undo
  * @cancellable: (nullable): optional #GCancellable
  * @error: (nullable): optional return location for an error
  *
- * Repair the failed security attributes.
+ * Harden the security attributes.
  *
  * Returns: %TRUE for success
  *
  * Since: 1.9.2
  **/
 gboolean
-fwupd_client_repair(FwupdClient *self,
-		    const gchar *appstream_id,
-		    const gchar *action,
-		    GCancellable *cancellable,
-		    GError **error)
+fwupd_client_security_harden(FwupdClient *self,
+			     const gchar *appstream_id,
+			     const gchar *action,
+			     GCancellable *cancellable,
+			     GError **error)
 {
 	g_autoptr(FwupdClientHelper) helper = NULL;
 
@@ -2722,12 +2721,12 @@ fwupd_client_repair(FwupdClient *self,
 
 	/* call async version and run loop until complete */
 	helper = fwupd_client_helper_new(self);
-	fwupd_client_repair_async(self,
-				  appstream_id,
-				  action,
-				  cancellable,
-				  fwupd_client_repair_cb,
-				  helper);
+	fwupd_client_security_harden_async(self,
+					   appstream_id,
+					   action,
+					   cancellable,
+					   fwupd_client_security_harden_cb,
+					   helper);
 	g_main_loop_run(helper->loop);
 	if (!helper->ret) {
 		g_propagate_error(error, g_steal_pointer(&helper->error));
