@@ -93,7 +93,7 @@ grubby_set_iommu(gboolean enable, GError **error)
 }
 
 static gboolean
-fu_engine_security_kernel_lockdown(FuEngine *engine, const gchar *action, GError **error)
+fu_engine_security_kernel_lockdown(FuEngine *engine, guint64 action, GError **error)
 {
 	g_autoptr(GHashTable) kernel_param = NULL;
 	FuSecurityAttrs *attrs;
@@ -128,7 +128,8 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, const gchar *action, GError
 
 	flags = fwupd_security_attr_get_flags(attr);
 
-	if (!g_strcmp0(action, "undo")) {
+	switch (action) {
+	case FU_ENGINE_SECURITY_HARDEN_UNSET:
 		if (flags == FWUPD_SECURITY_ATTR_FLAG_SUCCESS) {
 			g_set_error_literal(
 			    error,
@@ -152,13 +153,22 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, const gchar *action, GError
 			}
 			return grubby_set_lockdown(FALSE, error);
 		}
-	}
+		break;
 
-	return grubby_set_lockdown(TRUE, error);
+	case FU_ENGINE_SECURITY_HARDEN_SET:
+		return grubby_set_lockdown(TRUE, error);
+
+	default:
+		g_set_error_literal(error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_INTERNAL,
+				    "Incorrect action setting.");
+		return FALSE;
+	}
 }
 
 static gboolean
-fu_engine_security_iommu_remediation(const gchar *action, GError **error)
+fu_engine_security_iommu_remediation(guint64 action, GError **error)
 {
 	g_autoptr(GHashTable) kernel_param = NULL;
 	gchar *value = NULL;
@@ -176,7 +186,8 @@ fu_engine_security_iommu_remediation(const gchar *action, GError **error)
 		return FALSE;
 	}
 
-	if (!g_strcmp0(action, "undo")) {
+	switch (action) {
+	case FU_ENGINE_SECURITY_HARDEN_UNSET:
 		value = g_hash_table_lookup(kernel_param, "iommu");
 		if (!value) {
 			g_set_error_literal(error,
@@ -195,25 +206,34 @@ fu_engine_security_iommu_remediation(const gchar *action, GError **error)
 		}
 
 		return grubby_set_iommu(FALSE, error);
-	}
+		break;
+	case FU_ENGINE_SECURITY_HARDEN_SET:
+		if (g_hash_table_contains(kernel_param, "iommu") ||
+		    g_hash_table_contains(kernel_param, "intel_iommu") ||
+		    g_hash_table_contains(kernel_param, "amd_iommu")) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_NOTHING_TO_DO,
+					    "IOMMU had been already set.");
+			return FALSE;
+		}
 
-	if (g_hash_table_contains(kernel_param, "iommu") ||
-	    g_hash_table_contains(kernel_param, "intel_iommu") ||
-	    g_hash_table_contains(kernel_param, "amd_iommu")) {
+		return grubby_set_iommu(TRUE, error);
+		break;
+
+	default:
 		g_set_error_literal(error,
 				    FWUPD_ERROR,
-				    FWUPD_ERROR_NOTHING_TO_DO,
-				    "IOMMU had been already set.");
+				    FWUPD_ERROR_INTERNAL,
+				    "Incorrect action setting.");
 		return FALSE;
 	}
-
-	return grubby_set_iommu(TRUE, error);
 }
 
 static gboolean
 fu_engine_security_bios_setting_revert(FuEngine *engine,
 				       const gchar *appstream_id,
-				       const gchar *action,
+				       gint64 action,
 				       const gchar *bios_id,
 				       const gchar *current_value,
 				       GError **error)
@@ -239,7 +259,7 @@ static gboolean
 fu_engine_security_remediation(FuEngine *engine,
 			       FuSecurityAttrs *attrs,
 			       const gchar *appstream_id,
-			       const gchar *action,
+			       guint64 action,
 			       GError **error)
 {
 	FwupdSecurityAttr *attr;
@@ -259,7 +279,19 @@ fu_engine_security_remediation(FuEngine *engine,
 	if (fwupd_security_attr_get_bios_setting_id(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_current_value(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_target_value(attr) != NULL) {
-		if (!g_strcmp0(action, "undo")) {
+		switch (action) {
+		case FU_ENGINE_SECURITY_HARDEN_SET:
+			g_hash_table_insert(
+			    settings,
+			    g_strdup(fwupd_security_attr_get_bios_setting_id(attr)),
+			    g_strdup(fwupd_security_attr_get_bios_setting_target_value(attr)));
+			if (!fu_engine_modify_bios_settings(engine, settings, FALSE, error))
+				return FALSE;
+
+			return TRUE;
+			break;
+
+		case FU_ENGINE_SECURITY_HARDEN_UNSET:
 			return fu_engine_security_bios_setting_revert(
 			    engine,
 			    appstream_id,
@@ -267,15 +299,15 @@ fu_engine_security_remediation(FuEngine *engine,
 			    fwupd_security_attr_get_bios_setting_id(attr),
 			    fwupd_security_attr_get_bios_setting_current_value(attr),
 			    error);
-		}
-		g_hash_table_insert(
-		    settings,
-		    g_strdup(fwupd_security_attr_get_bios_setting_id(attr)),
-		    g_strdup(fwupd_security_attr_get_bios_setting_target_value(attr)));
-		if (!fu_engine_modify_bios_settings(engine, settings, FALSE, error))
-			return FALSE;
+			break;
 
-		return TRUE;
+		default:
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_INTERNAL,
+					    "Incorrect action setting.");
+			return FALSE;
+		}
 	}
 
 	g_set_error_literal(error,
@@ -286,7 +318,7 @@ fu_engine_security_remediation(FuEngine *engine,
 }
 
 gboolean
-fu_engine_security_harden(FuEngine *self, const gchar *key, const gchar *value, GError **error)
+fu_engine_security_harden(FuEngine *self, const gchar *key, guint64 value, GError **error)
 {
 	g_autoptr(GPtrArray) attrs_array;
 	FuSecurityAttrs *attrs;

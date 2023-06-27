@@ -827,11 +827,11 @@
     </method>
 
     <!--***********************************************************-->
-    <method name='Repair'>
+    <method name='SecurityHarden'>
       <doc:doc>
         <doc:description>
           <doc:para>
-            Repair a failed HSI test item.
+            Security hardening for HSI.
           </doc:para>
         </doc:description>
       </doc:doc>
@@ -844,7 +844,7 @@
           </doc:summary>
         </doc:doc>
       </arg>
-      <arg type='s' name='action' direction='in'>
+      <arg type='u' name='action' direction='in'>
         <doc:doc>
           <doc:summary>
             <doc:para>

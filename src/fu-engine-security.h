@@ -25,4 +25,4 @@ typedef enum {
 } FuEngineSecurityAction;
 
 gboolean
-fu_engine_security_harden(FuEngine *self, const gchar *key, const gchar *value, GError **error);
+fu_engine_security_harden(FuEngine *self, const gchar *key, guint64 value, GError **error);
