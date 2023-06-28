@@ -267,7 +267,7 @@ fwupd_client_emulation_save(FwupdClient *self,
 gboolean
 fwupd_client_security_harden(FwupdClient *self,
 			     const gchar *appstream_id,
-			     guint action,
+			     const gchar *action,
 			     GCancellable *cancellable,
 			     GError **error);
 

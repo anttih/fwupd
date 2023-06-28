@@ -426,7 +426,7 @@ fwupd_client_emulation_save_finish(FwupdClient *self,
 void
 fwupd_client_security_harden_async(FwupdClient *self,
 				   const gchar *appstream_id,
-				   guint action,
+				   const gchar *action,
 				   GCancellable *cancellable,
 				   GAsyncReadyCallback callback,
 				   gpointer callback_data);
