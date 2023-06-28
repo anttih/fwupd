@@ -240,7 +240,7 @@ fu_engine_security_bios_setting_revert(FuEngine *engine,
 				       const gchar *current_value,
 				       GError **error)
 {
-	g_autofree gchar *previous_setting;
+	g_autofree gchar *previous_setting = NULL;
 	g_autoptr(GHashTable) settings =
 	    g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
 
@@ -321,7 +321,7 @@ gboolean
 fu_engine_security_harden(FuEngine *engine, const gchar *key, const gchar *value, GError **error)
 {
 	guint action;
-	g_autoptr(GPtrArray) attrs_array;
+	g_autoptr(GPtrArray) attrs_array = NULL;
 	FuSecurityAttrs *attrs;
 
 	if (!g_strcmp0(value, "do")) {
