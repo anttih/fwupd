@@ -15,5 +15,5 @@
 gboolean
 fu_engine_security_harden(FuEngine *self,
 			  const gchar *appstream_id,
-			  gboolean is_hardening,
+			  gboolean enable,
 			  GError **error);
