@@ -947,7 +947,7 @@ LIBFWUPD_1.9.1 {
   local: *;
 } LIBFWUPD_1.8.13;
 
-LIBFWUPD_1.9.2 {
+LIBFWUPD_1.9.3 {
   global:
     fwupd_client_security_harden;
     fwupd_client_security_harden_async;

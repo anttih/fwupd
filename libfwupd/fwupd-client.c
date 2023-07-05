@@ -5904,7 +5904,7 @@ fwupd_client_security_harden_cb(GObject *source, GAsyncResult *res, gpointer use
  *
  * Harden the security attribute with blocking.
  *
- * Since: 1.9.2
+ * Since: 1.9.3
  **/
 void
 fwupd_client_security_harden_async(FwupdClient *self,
@@ -5945,7 +5945,7 @@ fwupd_client_security_harden_async(FwupdClient *self,
  *
  * Returns: %TRUE for success
  *
- * Since: 1.9.2
+ * Since: 1.9.3
  **/
 gboolean
 fwupd_client_security_harden_finish(FwupdClient *self, GAsyncResult *res, GError **error)

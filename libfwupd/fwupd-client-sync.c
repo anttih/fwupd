@@ -2690,7 +2690,7 @@ fwupd_client_security_harden_cb(GObject *source, GAsyncResult *res, gpointer use
  * fwupd_client_security_harden:
  * @self: a #FwupdClient
  * @appstream_id: the AppStream_id
- * @action: specify do or undo
+ * @enable: TRUE to enable hardening, FALSE to disable
  * @cancellable: (nullable): optional #GCancellable
  * @error: (nullable): optional return location for an error
  *
@@ -2698,12 +2698,12 @@ fwupd_client_security_harden_cb(GObject *source, GAsyncResult *res, gpointer use
  *
  * Returns: %TRUE for success
  *
- * Since: 1.9.2
+ * Since: 1.9.3
  **/
 gboolean
 fwupd_client_security_harden(FwupdClient *self,
 			     const gchar *appstream_id,
-			     gboolean is_hardening,
+			     gboolean enable,
 			     GCancellable *cancellable,
 			     GError **error)
 {
@@ -2722,7 +2722,7 @@ fwupd_client_security_harden(FwupdClient *self,
 	helper = fwupd_client_helper_new(self);
 	fwupd_client_security_harden_async(self,
 					   appstream_id,
-					   is_hardening,
+					   enable,
 					   cancellable,
 					   fwupd_client_security_harden_cb,
 					   helper);
