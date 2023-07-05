@@ -28,6 +28,7 @@
 #include "fwupd-remote-private.h"
 
 #include "fu-console.h"
+#include "fu-engine-security.h"
 #include "fu-plugin-private.h"
 #include "fu-polkit-agent.h"
 #include "fu-util-bios-setting.h"
@@ -4252,7 +4253,7 @@ static gboolean
 fu_util_security_harden(FuUtilPrivate *priv, gchar **values, GError **error)
 {
 	gchar *appstream_id = NULL;
-	g_autofree gchar *action = NULL;
+	guint action = 0;
 	g_autoptr(GList) fu_repair_list = NULL;
 	gint ret = 0;
 
@@ -4261,12 +4262,11 @@ fu_util_security_harden(FuUtilPrivate *priv, gchar **values, GError **error)
 
 		if (i == 0) {
 			appstream_id = values[i];
-			action = g_strdup_printf("do");
 		} else if (i == 1) {
 			if (!g_strcmp0(values[i], "do")) {
-				action = g_strdup_printf("do");
+				action = FU_ENGINE_SECURITY_HARDEN_SET;
 			} else if (!g_strcmp0(values[i], "undo")) {
-				action = g_strdup_printf("undo");
+				action = FU_ENGINE_SECURITY_HARDEN_UNSET;
 			} else {
 				g_set_error_literal(error,
 						    FWUPD_ERROR,
