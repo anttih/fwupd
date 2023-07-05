@@ -30,26 +30,17 @@
 #include "fu-util-common.h"
 
 static gboolean
-is_grubby_installed(GError **error)
-{
-	g_autofree gchar *grubby = NULL;
-
-	grubby = fu_path_find_program("grubby", error);
-	if (!grubby)
-		return FALSE;
-
-	return TRUE;
-}
-
-static gboolean
-grubby_set(gboolean enable, const gchar *grubby_arg, GError **error)
+grubby_set(const gchar *grubby, gboolean enable, const gchar *grubby_arg, GError **error)
 {
 	g_autofree gchar *output = NULL;
 	g_autofree gchar *arg_string = NULL;
 	const gchar *argv_grubby[] = {"", "--update-kernel=DEFAULT", "", NULL};
-	g_autofree gchar *grubby = NULL;
 
-	grubby = fu_path_find_program("grubby", NULL);
+	if (grubby == NULL) {
+		g_set_error(error, FWUPD_ERROR, FWUPD_ERROR_INTERNAL, "grubby path can't be NULL.");
+		return FALSE;
+	}
+
 	argv_grubby[0] = grubby;
 
 	if (enable)
@@ -75,38 +66,35 @@ grubby_set(gboolean enable, const gchar *grubby_arg, GError **error)
 }
 
 static gboolean
-grubby_set_lockdown(gboolean enable, GError **error)
+grubby_set_lockdown(const gchar *grubby, gboolean enable, GError **error)
 {
 	if (enable)
-		return grubby_set(TRUE, "lockdown=confidentiality", error);
+		return grubby_set(grubby, TRUE, "lockdown=confidentiality", error);
 	else
-		return grubby_set(FALSE, "lockdown=confidentiality", error);
+		return grubby_set(grubby, FALSE, "lockdown=confidentiality", error);
 }
 
 static gboolean
-grubby_set_iommu(gboolean enable, GError **error)
+grubby_set_iommu(const gchar *grubby, gboolean enable, GError **error)
 {
 	if (enable)
-		return grubby_set(TRUE, "iommu=force", error);
+		return grubby_set(grubby, TRUE, "iommu=force", error);
 	else
-		return grubby_set(FALSE, "iommu=force", error);
+		return grubby_set(grubby, FALSE, "iommu=force", error);
 }
 
 static gboolean
 fu_engine_security_kernel_lockdown(FuEngine *engine, gboolean is_hardening, GError **error)
 {
+	g_autofree gchar *grubby = NULL;
 	g_autoptr(GHashTable) kernel_param = NULL;
 	FuSecurityAttrs *attrs;
 	FwupdSecurityAttr *attr;
 	guint flags;
 
-	if (!is_grubby_installed(error)) {
-		g_set_error_literal(error,
-				    FWUPD_ERROR,
-				    FWUPD_ERROR_NOT_SUPPORTED,
-				    "Grubby was not installed.");
+	grubby = fu_path_find_program("grubby", error);
+	if (!grubby)
 		return FALSE;
-	}
 
 	attrs = fu_engine_get_host_security_attrs(engine);
 	if (!attrs) {
@@ -141,7 +129,7 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, gboolean is_hardening, GErr
 					    "Kernel lockdown has already been enabled.");
 			return FALSE;
 		}
-		return grubby_set_lockdown(TRUE, error);
+		return grubby_set_lockdown(grubby, TRUE, error);
 		break;
 
 	case FALSE:
@@ -161,7 +149,7 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, gboolean is_hardening, GErr
 				    "Can't be reverted since kernel lockdown was disabled.");
 				return FALSE;
 			}
-			return grubby_set_lockdown(FALSE, error);
+			return grubby_set_lockdown(grubby, FALSE, error);
 		}
 		break;
 
@@ -177,16 +165,13 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, gboolean is_hardening, GErr
 static gboolean
 fu_engine_security_iommu_remediation(gboolean is_hardening, GError **error)
 {
+	g_autofree gchar *grubby = NULL;
 	g_autoptr(GHashTable) kernel_param = NULL;
 	gchar *value = NULL;
 
-	if (!is_grubby_installed(error)) {
-		g_set_error_literal(error,
-				    FWUPD_ERROR,
-				    FWUPD_ERROR_NOT_SUPPORTED,
-				    "Grubby was not installed.");
+	grubby = fu_path_find_program("grubby", error);
+	if (!grubby)
 		return FALSE;
-	}
 
 	kernel_param = fu_kernel_get_cmdline(error);
 	if (!kernel_param) {
@@ -212,7 +197,7 @@ fu_engine_security_iommu_remediation(gboolean is_hardening, GError **error)
 			return FALSE;
 		}
 
-		return grubby_set_iommu(FALSE, error);
+		return grubby_set_iommu(grubby, FALSE, error);
 		break;
 	case FALSE:
 		if (g_hash_table_contains(kernel_param, "iommu") ||
@@ -225,7 +210,7 @@ fu_engine_security_iommu_remediation(gboolean is_hardening, GError **error)
 			return FALSE;
 		}
 
-		return grubby_set_iommu(TRUE, error);
+		return grubby_set_iommu(grubby, TRUE, error);
 		break;
 
 	default:
