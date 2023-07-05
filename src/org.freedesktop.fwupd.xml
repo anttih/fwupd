@@ -844,11 +844,11 @@
           </doc:summary>
         </doc:doc>
       </arg>
-      <arg type='u' name='action' direction='in'>
+      <arg type='b' name='action' direction='in'>
         <doc:doc>
           <doc:summary>
             <doc:para>
-              The action, e.g. 'do' or 'undo'.
+              The action, e.g. True for do and False for undo.
             </doc:para>
           </doc:summary>
         </doc:doc>

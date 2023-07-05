@@ -93,7 +93,7 @@ grubby_set_iommu(gboolean enable, GError **error)
 }
 
 static gboolean
-fu_engine_security_kernel_lockdown(FuEngine *engine, guint64 action, GError **error)
+fu_engine_security_kernel_lockdown(FuEngine *engine, gboolean is_hardening, GError **error)
 {
 	g_autoptr(GHashTable) kernel_param = NULL;
 	FuSecurityAttrs *attrs;
@@ -132,8 +132,19 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, guint64 action, GError **er
 	if (!kernel_param)
 		return FALSE;
 
-	switch (action) {
-	case FU_ENGINE_SECURITY_HARDEN_UNSET:
+	switch (is_hardening) {
+	case TRUE:
+		if (g_hash_table_contains(kernel_param, "lockdown")) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_READ,
+					    "Kernel lockdown has already been enabled.");
+			return FALSE;
+		}
+		return grubby_set_lockdown(TRUE, error);
+		break;
+
+	case FALSE:
 		if (flags == FWUPD_SECURITY_ATTR_FLAG_SUCCESS) {
 			g_set_error_literal(
 			    error,
@@ -154,17 +165,6 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, guint64 action, GError **er
 		}
 		break;
 
-	case FU_ENGINE_SECURITY_HARDEN_SET:
-		if (g_hash_table_contains(kernel_param, "lockdown")) {
-			g_set_error_literal(error,
-					    FWUPD_ERROR,
-					    FWUPD_ERROR_READ,
-					    "Kernel lockdown has already been enabled.");
-			return FALSE;
-		}
-		return grubby_set_lockdown(TRUE, error);
-		break;
-
 	default:
 		g_set_error_literal(error,
 				    FWUPD_ERROR,
@@ -175,7 +175,7 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, guint64 action, GError **er
 }
 
 static gboolean
-fu_engine_security_iommu_remediation(guint64 action, GError **error)
+fu_engine_security_iommu_remediation(gboolean is_hardening, GError **error)
 {
 	g_autoptr(GHashTable) kernel_param = NULL;
 	gchar *value = NULL;
@@ -193,8 +193,8 @@ fu_engine_security_iommu_remediation(guint64 action, GError **error)
 		return FALSE;
 	}
 
-	switch (action) {
-	case FU_ENGINE_SECURITY_HARDEN_UNSET:
+	switch (is_hardening) {
+	case TRUE:
 		value = g_hash_table_lookup(kernel_param, "iommu");
 		if (!value) {
 			g_set_error_literal(error,
@@ -214,7 +214,7 @@ fu_engine_security_iommu_remediation(guint64 action, GError **error)
 
 		return grubby_set_iommu(FALSE, error);
 		break;
-	case FU_ENGINE_SECURITY_HARDEN_SET:
+	case FALSE:
 		if (g_hash_table_contains(kernel_param, "iommu") ||
 		    g_hash_table_contains(kernel_param, "intel_iommu") ||
 		    g_hash_table_contains(kernel_param, "amd_iommu")) {
@@ -266,7 +266,7 @@ static gboolean
 fu_engine_security_remediation(FuEngine *engine,
 			       FuSecurityAttrs *attrs,
 			       const gchar *appstream_id,
-			       guint64 action,
+			       gboolean is_hardening,
 			       GError **error)
 {
 	FwupdSecurityAttr *attr;
@@ -286,8 +286,8 @@ fu_engine_security_remediation(FuEngine *engine,
 	if (fwupd_security_attr_get_bios_setting_id(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_current_value(attr) != NULL &&
 	    fwupd_security_attr_get_bios_setting_target_value(attr) != NULL) {
-		switch (action) {
-		case FU_ENGINE_SECURITY_HARDEN_SET:
+		switch (is_hardening) {
+		case TRUE:
 			g_hash_table_insert(
 			    settings,
 			    g_strdup(fwupd_security_attr_get_bios_setting_id(attr)),
@@ -298,11 +298,11 @@ fu_engine_security_remediation(FuEngine *engine,
 			return TRUE;
 			break;
 
-		case FU_ENGINE_SECURITY_HARDEN_UNSET:
+		case FALSE:
 			return fu_engine_security_bios_setting_revert(
 			    engine,
 			    appstream_id,
-			    action,
+			    is_hardening,
 			    fwupd_security_attr_get_bios_setting_id(attr),
 			    fwupd_security_attr_get_bios_setting_current_value(attr),
 			    error);
@@ -325,17 +325,19 @@ fu_engine_security_remediation(FuEngine *engine,
 }
 
 gboolean
-fu_engine_security_harden(FuEngine *self, const gchar *key, guint64 value, GError **error)
+fu_engine_security_harden(FuEngine *self,
+			  const gchar *appstream_id,
+			  gboolean is_hardening,
+			  GError **error)
 {
-	guint action;
 	g_autoptr(GPtrArray) attrs_array = NULL;
 	FuSecurityAttrs *attrs;
 
 	/* dedicated treatment */
-	if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_IOMMU)) {
-		return fu_engine_security_iommu_remediation(value, error);
-	} else if (!g_strcmp0(key, FWUPD_SECURITY_ATTR_ID_KERNEL_LOCKDOWN)) {
-		return fu_engine_security_kernel_lockdown(self, value, error);
+	if (!g_strcmp0(appstream_id, FWUPD_SECURITY_ATTR_ID_IOMMU)) {
+		return fu_engine_security_iommu_remediation(is_hardening, error);
+	} else if (!g_strcmp0(appstream_id, FWUPD_SECURITY_ATTR_ID_KERNEL_LOCKDOWN)) {
+		return fu_engine_security_kernel_lockdown(self, is_hardening, error);
 	}
 
 	/* for those BIOS fixes and unsupported items */
@@ -353,8 +355,12 @@ fu_engine_security_harden(FuEngine *self, const gchar *key, guint64 value, GErro
 	for (guint i = 0; i < attrs_array->len; i++) {
 		FwupdSecurityAttr *attr = g_ptr_array_index(attrs_array, i);
 		const gchar *appstream_tmp = fwupd_security_attr_get_appstream_id(attr);
-		if (!g_strcmp0(key, appstream_tmp)) {
-			return fu_engine_security_remediation(self, attrs, key, value, error);
+		if (!g_strcmp0(appstream_id, appstream_tmp)) {
+			return fu_engine_security_remediation(self,
+							      attrs,
+							      appstream_id,
+							      is_hardening,
+							      error);
 		}
 	}
 

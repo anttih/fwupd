@@ -5909,7 +5909,7 @@ fwupd_client_security_harden_cb(GObject *source, GAsyncResult *res, gpointer use
 void
 fwupd_client_security_harden_async(FwupdClient *self,
 				   const gchar *appstream_id,
-				   guint action,
+				   gboolean action,
 				   GCancellable *cancellable,
 				   GAsyncReadyCallback callback,
 				   gpointer callback_data)
@@ -5927,7 +5927,7 @@ fwupd_client_security_harden_async(FwupdClient *self,
 
 	g_dbus_proxy_call(priv->proxy,
 			  "SecurityHarden",
-			  g_variant_new("(su)", appstream_id, action),
+			  g_variant_new("(sb)", appstream_id, action),
 			  G_DBUS_CALL_FLAGS_NONE,
 			  FWUPD_CLIENT_DBUS_PROXY_TIMEOUT,
 			  cancellable,

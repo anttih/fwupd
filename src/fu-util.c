@@ -4253,7 +4253,7 @@ static gboolean
 fu_util_security_harden(FuUtilPrivate *priv, gchar **values, GError **error)
 {
 	gchar *appstream_id = NULL;
-	guint action = 0;
+	gboolean action = TRUE;
 	g_autoptr(GList) fu_repair_list = NULL;
 	gint ret = 0;
 
@@ -4264,9 +4264,9 @@ fu_util_security_harden(FuUtilPrivate *priv, gchar **values, GError **error)
 			appstream_id = values[i];
 		} else if (i == 1) {
 			if (!g_strcmp0(values[i], "do")) {
-				action = FU_ENGINE_SECURITY_HARDEN_SET;
+				action = TRUE;
 			} else if (!g_strcmp0(values[i], "undo")) {
-				action = FU_ENGINE_SECURITY_HARDEN_UNSET;
+				action = FALSE;
 			} else {
 				g_set_error_literal(error,
 						    FWUPD_ERROR,

@@ -2703,7 +2703,7 @@ fwupd_client_security_harden_cb(GObject *source, GAsyncResult *res, gpointer use
 gboolean
 fwupd_client_security_harden(FwupdClient *self,
 			     const gchar *appstream_id,
-			     guint action,
+			     gboolean is_hardening,
 			     GCancellable *cancellable,
 			     GError **error)
 {
@@ -2722,7 +2722,7 @@ fwupd_client_security_harden(FwupdClient *self,
 	helper = fwupd_client_helper_new(self);
 	fwupd_client_security_harden_async(self,
 					   appstream_id,
-					   action,
+					   is_hardening,
 					   cancellable,
 					   fwupd_client_security_harden_cb,
 					   helper);

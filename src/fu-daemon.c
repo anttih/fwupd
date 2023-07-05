@@ -371,6 +371,7 @@ typedef struct {
 	gchar *value;
 	XbSilo *silo;
 	GHashTable *bios_settings; /* str:str */
+	gboolean is_hardening;
 } FuMainAuthHelper;
 
 static void
@@ -530,7 +531,10 @@ fu_daemon_authorize_security_harden_cb(GObject *source, GAsyncResult *res, gpoin
 	}
 
 	/* success */
-	if (!fu_engine_security_harden(helper->self->engine, helper->key, helper->flags, &error)) {
+	if (!fu_engine_security_harden(helper->self->engine,
+				       helper->key,
+				       helper->is_hardening,
+				       &error)) {
 		g_dbus_method_invocation_return_gerror(helper->invocation, error);
 		return;
 	}
@@ -1969,9 +1973,9 @@ fu_daemon_daemon_method_call(GDBusConnection *connection,
 	}
 	if (g_strcmp0(method_name, "SecurityHarden") == 0) {
 		g_autofree gchar *appstream_id = NULL;
-		guint action;
+		gboolean action;
 		g_autoptr(FuMainAuthHelper) helper = NULL;
-		g_variant_get(parameters, "(su)", &appstream_id, &action);
+		g_variant_get(parameters, "(sb)", &appstream_id, &action);
 		g_debug("Called %s(%s)", method_name, appstream_id);
 
 		/* authenticate */
@@ -1982,7 +1986,7 @@ fu_daemon_daemon_method_call(GDBusConnection *connection,
 		helper->invocation = g_object_ref(invocation);
 		helper->checksums = g_ptr_array_new_with_free_func(g_free);
 		helper->key = g_steal_pointer(&appstream_id);
-		helper->flags = (guint64)action;
+		helper->is_hardening = action;
 
 		fu_polkit_authority_check(self->authority,
 					  sender,
