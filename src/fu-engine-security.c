@@ -30,57 +30,21 @@
 #include "fu-util-common.h"
 
 static gboolean
-grubby_set(const gchar *grubby, gboolean enable, const gchar *grubby_arg, GError **error)
-{
-	g_autofree gchar *output = NULL;
-	g_autofree gchar *arg_string = NULL;
-	const gchar *argv_grubby[] = {"", "--update-kernel=DEFAULT", "", NULL};
-
-	if (grubby == NULL) {
-		g_set_error(error, FWUPD_ERROR, FWUPD_ERROR_INTERNAL, "grubby path can't be NULL.");
-		return FALSE;
-	}
-
-	argv_grubby[0] = grubby;
-
-	if (enable)
-		arg_string = g_strdup_printf("--args=%s", grubby_arg);
-	else
-		arg_string = g_strdup_printf("--remove-args=%s", grubby_arg);
-
-	argv_grubby[2] = arg_string;
-
-	if (!g_spawn_sync(NULL,
-			  (gchar **)argv_grubby,
-			  NULL,
-			  G_SPAWN_DEFAULT,
-			  NULL,
-			  NULL,
-			  &output,
-			  NULL,
-			  NULL,
-			  error))
-		return FALSE;
-
-	return TRUE;
-}
-
-static gboolean
 grubby_set_lockdown(const gchar *grubby, gboolean enable, GError **error)
 {
 	if (enable)
-		return grubby_set(grubby, TRUE, "lockdown=confidentiality", error);
+		return fu_kernel_set_commandline(grubby, TRUE, "lockdown=confidentiality", error);
 	else
-		return grubby_set(grubby, FALSE, "lockdown=confidentiality", error);
+		return fu_kernel_set_commandline(grubby, FALSE, "lockdown=confidentiality", error);
 }
 
 static gboolean
 grubby_set_iommu(const gchar *grubby, gboolean enable, GError **error)
 {
 	if (enable)
-		return grubby_set(grubby, TRUE, "iommu=force", error);
+		return fu_kernel_set_commandline(grubby, TRUE, "iommu=force", error);
 	else
-		return grubby_set(grubby, FALSE, "iommu=force", error);
+		return fu_kernel_set_commandline(grubby, FALSE, "iommu=force", error);
 }
 
 static gboolean
@@ -92,16 +56,16 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, gboolean enable, GError **e
 	FwupdSecurityAttr *attr;
 	guint flags;
 
-	grubby = fu_path_find_program("grubby", error);
-	if (!grubby)
+	grubby = fu_kernel_get_grubby_path(error);
+	if (grubby == NULL)
 		return FALSE;
 
 	kernel_param = fu_kernel_get_cmdline(error);
-	if (!kernel_param)
+	if (kernel_param == NULL)
 		return FALSE;
 
 	attrs = fu_engine_get_host_security_attrs(engine);
-	if (!attrs) {
+	if (attrs == NULL) {
 		g_set_error_literal(error,
 				    FWUPD_ERROR,
 				    FWUPD_ERROR_INTERNAL,
@@ -110,7 +74,7 @@ fu_engine_security_kernel_lockdown(FuEngine *engine, gboolean enable, GError **e
 	}
 
 	attr = fu_security_attrs_get_by_appstream_id(attrs, FWUPD_SECURITY_ATTR_ID_UEFI_SECUREBOOT);
-	if (!attr) {
+	if (attr == NULL) {
 		g_set_error_literal(error,
 				    FWUPD_ERROR,
 				    FWUPD_ERROR_READ,

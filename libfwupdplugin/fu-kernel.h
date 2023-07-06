@@ -22,3 +22,10 @@ GHashTable *
 fu_kernel_get_cmdline(GError **error);
 GHashTable *
 fu_kernel_parse_cmdline(const gchar *buf, gsize bufsz);
+gboolean
+fu_kernel_set_commandline(const gchar *grubby_path,
+			  gboolean set_unset,
+			  const gchar *arg,
+			  GError **error);
+gchar *
+fu_kernel_get_grubby_path(GError **error);

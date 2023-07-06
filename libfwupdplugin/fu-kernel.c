@@ -305,3 +305,75 @@ fu_kernel_get_cmdline(GError **error)
 	return NULL;
 #endif
 }
+
+/**
+ * fu_kernel_set_cmdline:
+ * @arg: (not nullable): key to set
+ * @set_unset: set or unset the parameter
+ * @error: (nullable): optional return location for an error
+ *
+ * Set kernel parameters through grubby
+ *
+ * Returns: %TRUE if successful
+ *
+ * Since: 1.9.3
+ **/
+
+gboolean
+fu_kernel_set_commandline(const gchar *grubby_path,
+			  gboolean set_unset,
+			  const gchar *arg,
+			  GError **error)
+{
+	g_autofree gchar *output = NULL;
+	g_autofree gchar *arg_string = NULL;
+	const gchar *argv_grubby[] = {"", "--update-kernel=DEFAULT", "", NULL};
+
+	if (grubby_path == NULL) {
+		g_set_error(error, FWUPD_ERROR, FWUPD_ERROR_INTERNAL, "grubby path can't be NULL.");
+		return FALSE;
+	}
+
+	argv_grubby[0] = grubby_path;
+
+	if (set_unset)
+		arg_string = g_strdup_printf("--args=%s", arg);
+	else
+		arg_string = g_strdup_printf("--remove-args=%s", arg);
+
+	argv_grubby[2] = arg_string;
+
+	if (!g_spawn_sync(NULL,
+			  (gchar **)argv_grubby,
+			  NULL,
+			  G_SPAWN_DEFAULT,
+			  NULL,
+			  NULL,
+			  &output,
+			  NULL,
+			  NULL,
+			  error))
+		return FALSE;
+
+	return TRUE;
+}
+
+/**
+ * fu_kernel_get_grubby_path:
+ * @error: (nullable): optional return location for an error
+ *
+ * Set kernel parameters through grubby
+ *
+ * Returns: a pointer of gchar array
+ *
+ * Since: 1.9.3
+ **/
+gchar *
+fu_kernel_get_grubby_path(GError **error)
+{
+	g_autofree gchar *grubby_path = NULL;
+	grubby_path = fu_path_find_program("grubby", error);
+	if (grubby_path == NULL)
+		return NULL;
+	return g_strdup(grubby_path);
+}
