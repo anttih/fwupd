@@ -2167,7 +2167,7 @@ fu_plugin_runner_get_results(FuPlugin *self, FuDevice *device, GError **error)
  * fu_plugin_runner_security_remediation:
  * @self: a #FuPlugin
  * @enable: enable remediation or not
- * @user_data: (nullable): user data
+ * @attr: (nullable): security attribute
  * @error: (nullable): optional return location for an error
  *
  * Remidate the security issue
@@ -2179,7 +2179,7 @@ fu_plugin_runner_get_results(FuPlugin *self, FuDevice *device, GError **error)
 gboolean
 fu_plugin_runner_security_remediation(FuPlugin *self,
 				      gboolean enable,
-				      gpointer user_data,
+				      FwupdSecurityAttr *attr,
 				      GError **error)
 {
 	FuPluginVfuncs *vfuncs = fu_plugin_get_vfuncs(self);
@@ -2195,7 +2195,7 @@ fu_plugin_runner_security_remediation(FuPlugin *self,
 		return FALSE;
 	}
 
-	return vfuncs->security_remediation(self, enable, user_data, error);
+	return vfuncs->security_remediation(self, enable, attr, error);
 }
 
 /**

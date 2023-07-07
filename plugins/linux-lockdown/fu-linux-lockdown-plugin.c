@@ -166,13 +166,14 @@ fu_linux_lockdown_finalize(GObject *obj)
 static gboolean
 fu_linux_lockdown_plugin_security_remediation(FuPlugin *plugin,
 					      gboolean enable,
-					      gpointer user_data,
+					      FwupdSecurityAttr *attr,
 					      GError **error)
 {
 	g_autofree gchar *grubby = NULL;
 	g_autoptr(GHashTable) kernel_param = NULL;
-	FwupdSecurityAttr *attr = FWUPD_SECURITY_ATTR(user_data);
 	guint flags;
+
+	g_return_val_if_fail(attr != NULL, FALSE);
 
 	grubby = fu_kernel_get_grubby_path(error);
 	if (grubby == NULL)

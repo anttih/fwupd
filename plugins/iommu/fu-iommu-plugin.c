@@ -89,7 +89,10 @@ fu_iommu_plugin_constructed(GObject *obj)
 }
 
 static gboolean
-fu_iommu_security_remediation(FuPlugin *self, gboolean enable, gpointer user_data, GError **error)
+fu_iommu_security_remediation(FuPlugin *self,
+			      gboolean enable,
+			      FwupdSecurityAttr *attr,
+			      GError **error)
 {
 	g_autofree gchar *grubby = NULL;
 	g_autoptr(GHashTable) kernel_param = NULL;

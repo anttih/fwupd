@@ -123,7 +123,7 @@ fu_plugin_runner_get_results(FuPlugin *self,
 gboolean
 fu_plugin_runner_security_remediation(FuPlugin *self,
 				      gboolean enable,
-				      gpointer user_data,
+				      FwupdSecurityAttr *attr,
 				      GError **error) G_GNUC_WARN_UNUSED_RESULT;
 void
 fu_plugin_runner_add_security_attrs(FuPlugin *self, FuSecurityAttrs *attrs);

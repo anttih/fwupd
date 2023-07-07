@@ -385,7 +385,7 @@ struct _FuPluginClass {
 	 **/
 	gboolean (*security_remediation)(FuPlugin *self,
 					 gboolean enable,
-					 gpointer user_data,
+					 FwupdSecurityAttr *attr,
 					 GError **error);
 };
 

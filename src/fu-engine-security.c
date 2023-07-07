@@ -61,6 +61,7 @@ fu_engine_security_remediation(FuEngine *engine,
 			       GError **error)
 {
 	FuPlugin *plugin;
+	gboolean ret = FALSE;
 	FwupdSecurityAttr *attr;
 	g_autoptr(GHashTable) settings =
 	    g_hash_table_new_full(g_str_hash, g_str_equal, g_free, g_free);
@@ -71,6 +72,18 @@ fu_engine_security_remediation(FuEngine *engine,
 				    FWUPD_ERROR,
 				    FWUPD_ERROR_INTERNAL,
 				    "Attribute was not found");
+		return FALSE;
+	}
+
+	plugin = fu_engine_get_plugin_by_name(engine, fwupd_security_attr_get_plugin(attr), error);
+	if (plugin)
+		ret = fu_plugin_runner_security_remediation(plugin, enable, attr, error);
+
+	if (ret) {
+		return TRUE;
+	} else if (g_error_matches(*error, FWUPD_ERROR, FWUPD_ERROR_NOT_SUPPORTED)) {
+		g_clear_error(error);
+	} else {
 		return FALSE;
 	}
 
@@ -107,12 +120,6 @@ fu_engine_security_remediation(FuEngine *engine,
 			return FALSE;
 		}
 	}
-
-	plugin = fu_engine_get_plugin_by_name(engine, fwupd_security_attr_get_plugin(attr), error);
-	if (plugin == NULL)
-		return FALSE;
-
-	return fu_plugin_runner_security_remediation(plugin, enable, attr, error);
 
 	g_set_error_literal(error,
 			    FWUPD_ERROR_NOT_SUPPORTED,
