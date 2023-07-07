@@ -28,7 +28,6 @@
 #include "fwupd-remote-private.h"
 
 #include "fu-console.h"
-#include "fu-engine-security.h"
 #include "fu-plugin-private.h"
 #include "fu-polkit-agent.h"
 #include "fu-util-bios-setting.h"
