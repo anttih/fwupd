@@ -1,5 +1,4 @@
-if get_option('plugin_cfu').require(gudev.found(),
-    error_message: 'gudev is needed for plugin_cfu').allowed()
+if gusb.found()
 cargs = ['-DG_LOG_DOMAIN="FuPluginCfu"']
 
 # do not use structgen as these files are used in the elanfp plugin too...
@@ -27,7 +26,5 @@ plugin_builtin_cfu = static_library('fu_plugin_cfu',
   dependencies: plugin_deps,
 )
 plugin_builtins += plugin_builtin_cfu
-
 plugincfu_incdir = include_directories('.')
-
 endif
