@@ -3287,6 +3287,23 @@ fu_engine_get_plugins(FuEngine *self)
 	return fu_plugin_list_get_all(self->plugin_list);
 }
 
+/**
+ * fu_engine_get_plugin_by_name:
+ * @self: a #FuEngine
+ *
+ * Gets a plugin by name.
+ *
+ * Returns: (type FuPlugin): the plugins
+ *
+ * Since: 1.9.3
+ **/
+FuPlugin *
+fu_engine_get_plugin_by_name(FuEngine *self, const gchar *plugin_name, GError **error)
+{
+	g_return_val_if_fail(FU_IS_ENGINE(self), NULL);
+	return fu_plugin_list_find_by_name(self->plugin_list, plugin_name, error);
+}
+
 static gboolean
 fu_engine_emulation_load_json(FuEngine *self, const gchar *json, GError **error)
 {

@@ -372,6 +372,21 @@ struct _FuPluginClass {
 	 * Since: 1.8.4
 	 **/
 	void (*to_string)(FuPlugin *self, guint idt, GString *str);
+	/**
+	 * security_remediation:
+	 * @self: a #FuPlugin
+	 * @enable: whether security remediation is enabled
+	 * @user_data: user data
+	 * @error: (nullable): optional return location for an error
+	 *
+	 * Enable or disable security remediation for the plugin.
+	 *
+	 * since: 1.9.3
+	 **/
+	gboolean (*security_remediation)(FuPlugin *self,
+					 gboolean enable,
+					 gpointer user_data,
+					 GError **error);
 };
 
 /**

@@ -88,6 +88,67 @@ fu_iommu_plugin_constructed(GObject *obj)
 	fu_plugin_add_udev_subsystem(plugin, "iommu");
 }
 
+static gboolean
+fu_iommu_security_remediation(FuPlugin *self, gboolean enable, gpointer user_data, GError **error)
+{
+	g_autofree gchar *grubby = NULL;
+	g_autoptr(GHashTable) kernel_param = NULL;
+	gchar *value = NULL;
+
+	grubby = fu_path_find_program("grubby", error);
+	if (!grubby)
+		return FALSE;
+
+	kernel_param = fu_kernel_get_cmdline(error);
+	if (!kernel_param) {
+		return FALSE;
+	}
+
+	switch (enable) {
+	case TRUE:
+		if (g_hash_table_contains(kernel_param, "iommu") ||
+		    g_hash_table_contains(kernel_param, "intel_iommu") ||
+		    g_hash_table_contains(kernel_param, "amd_iommu")) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_NOTHING_TO_DO,
+					    "IOMMU had been already set.");
+			return FALSE;
+		}
+
+		return fu_kernel_set_commandline(grubby, TRUE, "iommu=force", error);
+		break;
+
+	case FALSE:
+		value = g_hash_table_lookup(kernel_param, "iommu");
+		if (!value) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_NOTHING_TO_DO,
+					    "IOMMU was not set.");
+			return FALSE;
+		}
+
+		if (g_strcmp0(value, "force\n")) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_NOTHING_TO_DO,
+					    "IOMMU was not set to \"force\"");
+			return FALSE;
+		}
+
+		return fu_kernel_set_commandline(grubby, FALSE, "iommu=force", error);
+		break;
+
+	default:
+		g_set_error_literal(error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_INTERNAL,
+				    "Incorrect action setting.");
+		return FALSE;
+	}
+}
+
 static void
 fu_iommu_plugin_class_init(FuIommuPluginClass *klass)
 {
@@ -96,4 +157,5 @@ fu_iommu_plugin_class_init(FuIommuPluginClass *klass)
 	plugin_class->to_string = fu_iommu_plugin_to_string;
 	plugin_class->backend_device_added = fu_iommu_plugin_backend_device_added;
 	plugin_class->add_security_attrs = fu_iommu_plugin_add_security_attrs;
+	plugin_class->security_remediation = fu_iommu_security_remediation;
 }

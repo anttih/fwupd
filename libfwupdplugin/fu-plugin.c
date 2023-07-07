@@ -2164,6 +2164,41 @@ fu_plugin_runner_get_results(FuPlugin *self, FuDevice *device, GError **error)
 }
 
 /**
+ * fu_plugin_runner_security_remediation:
+ * @self: a #FuPlugin
+ * @enable: enable remediation or not
+ * @user_data: (nullable): user data
+ * @error: (nullable): optional return location for an error
+ *
+ * Remidate the security issue
+ *
+ * Returns: #TRUE for success, #FALSE for failure
+ *
+ * Since: 1.9.3
+ **/
+gboolean
+fu_plugin_runner_security_remediation(FuPlugin *self,
+				      gboolean enable,
+				      gpointer user_data,
+				      GError **error)
+{
+	FuPluginVfuncs *vfuncs = fu_plugin_get_vfuncs(self);
+
+	g_return_val_if_fail(FU_IS_PLUGIN(self), FALSE);
+	g_return_val_if_fail(error == NULL || *error == NULL, FALSE);
+
+	if (vfuncs->security_remediation == NULL) {
+		g_set_error_literal(error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_NOT_SUPPORTED,
+				    "Remediation is not supported");
+		return FALSE;
+	}
+
+	return vfuncs->security_remediation(self, enable, user_data, error);
+}
+
+/**
  * fu_plugin_get_order:
  * @self: a #FuPlugin
  *

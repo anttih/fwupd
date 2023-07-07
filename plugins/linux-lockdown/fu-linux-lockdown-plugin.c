@@ -163,6 +163,72 @@ fu_linux_lockdown_finalize(GObject *obj)
 	G_OBJECT_CLASS(fu_linux_lockdown_plugin_parent_class)->finalize(obj);
 }
 
+static gboolean
+fu_linux_lockdown_plugin_security_remediation(FuPlugin *plugin,
+					      gboolean enable,
+					      gpointer user_data,
+					      GError **error)
+{
+	g_autofree gchar *grubby = NULL;
+	g_autoptr(GHashTable) kernel_param = NULL;
+	FwupdSecurityAttr *attr = FWUPD_SECURITY_ATTR(user_data);
+	guint flags;
+
+	grubby = fu_kernel_get_grubby_path(error);
+	if (grubby == NULL)
+		return FALSE;
+
+	kernel_param = fu_kernel_get_cmdline(error);
+	if (kernel_param == NULL)
+		return FALSE;
+
+	flags = fwupd_security_attr_get_flags(attr);
+
+	switch (enable) {
+	case TRUE:
+		if (g_hash_table_contains(kernel_param, "lockdown")) {
+			g_set_error_literal(error,
+					    FWUPD_ERROR,
+					    FWUPD_ERROR_READ,
+					    "Kernel lockdown has already been enabled.");
+			return FALSE;
+		}
+		return fu_kernel_set_commandline(grubby, TRUE, "lockdown=confidentiality", error);
+
+	case FALSE:
+		if (flags == FWUPD_SECURITY_ATTR_FLAG_SUCCESS) {
+			g_set_error_literal(
+			    error,
+			    FWUPD_ERROR,
+			    FWUPD_ERROR_NOTHING_TO_DO,
+			    "Kernel lockdown can't be disabled when secure boot is enabled.");
+			return FALSE;
+		} else {
+			if (!g_hash_table_contains(kernel_param, "lockdown")) {
+				g_set_error_literal(
+				    error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_READ,
+				    "Can't be reverted since kernel lockdown was disabled.");
+				return FALSE;
+			}
+			return fu_kernel_set_commandline(grubby,
+							 FALSE,
+							 "lockdown=confidentiality",
+							 error);
+		}
+		break;
+
+	default:
+		g_set_error_literal(error,
+				    FWUPD_ERROR,
+				    FWUPD_ERROR_INTERNAL,
+				    "Incorrect action setting.");
+		return FALSE;
+	}
+	return TRUE;
+}
+
 static void
 fu_linux_lockdown_plugin_class_init(FuLinuxLockdownPluginClass *klass)
 {
@@ -173,4 +239,5 @@ fu_linux_lockdown_plugin_class_init(FuLinuxLockdownPluginClass *klass)
 	plugin_class->to_string = fu_linux_lockdown_plugin_to_string2;
 	plugin_class->startup = fu_linux_lockdown_plugin_startup;
 	plugin_class->add_security_attrs = fu_linux_lockdown_plugin_add_security_attrs;
+	plugin_class->security_remediation = fu_linux_lockdown_plugin_security_remediation;
 }
