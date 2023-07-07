@@ -82,11 +82,17 @@ This plugin uses the following plugin-specific quirks:
 
 The HID report ID to use when parsing the response of `GET_FIRMWARE_VERSION`.
 
+This usually corresponds to the `VersionsFeatureValueCapabilityUsageRangeMinimum` value
+set in the `.inf` file.
+
 Since: 1.9.1
 
 ### CfuOfferSetReport
 
 The HID report ID to use when sending the request for `FIRMWARE_UPDATE_OFFER`.
+
+This usually corresponds to the `OfferOutputValueCapabilityUsageRangeMinimum` value
+set in the `.inf` file.
 
 Since: 1.9.1
 
@@ -94,17 +100,26 @@ Since: 1.9.1
 
 The HID report ID to use when parsing the response of `FIRMWARE_UPDATE_OFFER`.
 
+This usually corresponds to the `OfferInputValueCapabilityUsageRangeMinimum` value
+set in the `.inf` file.
+
 Since: 1.9.1
 
 ### CfuContentSetReport
 
 The HID report ID to use when sending the request for `FIRMWARE_UPDATE_CONTENT`.
 
+This usually corresponds to the `PayloadOutputValueCapabilityUsageRangeMinimum` value
+set in the `.inf` file.
+
 Since: 1.9.1
 
 ### CfuContentGetReport
 
 The HID report ID to use when parsing the response of `FIRMWARE_UPDATE_CONTENT`.
+
+This usually corresponds to the `PayloadInputValueCapabilityUsageRangeMinimum` value
+set in the `.inf` file.
 
 Since: 1.9.1
 
