@@ -71,9 +71,9 @@ fu_thunderbolt_controller_to_string(FuDevice *device, guint idt, GString *str)
 	/* FuThunderboltDevice->to_string */
 	FU_DEVICE_CLASS(fu_thunderbolt_controller_parent_class)->to_string(device, idt, str);
 
-	fu_string_append(str, idt, "Device Type", fu_thunderbolt_controller_kind_to_string(self));
-	fu_string_append_kb(str, idt, "Safe Mode", self->safe_mode);
-	fu_string_append_kb(str, idt, "Native mode", self->is_native);
+	fu_string_append(str, idt, "DeviceType", fu_thunderbolt_controller_kind_to_string(self));
+	fu_string_append_kb(str, idt, "SafeMode", self->safe_mode);
+	fu_string_append_kb(str, idt, "NativeMode", self->is_native);
 	fu_string_append_ku(str, idt, "Generation", self->gen);
 }
 
@@ -129,7 +129,7 @@ fu_thunderbolt_controller_read_status_block(FuThunderboltController *self, GErro
 					       G_TYPE_INVALID);
 	if (firmware == NULL)
 		return FALSE;
-	if (FU_IS_INTEL_THUNDERBOLT_FIRMWARE(firmware)) {
+	if (FU_IS_INTEL_THUNDERBOLT_NVM(firmware)) {
 		self->is_native =
 		    fu_intel_thunderbolt_nvm_is_native(FU_INTEL_THUNDERBOLT_NVM(firmware));
 	}
